@@ -1,0 +1,127 @@
+{
+    "applu":
+    {
+        "cache":
+        {
+            "icache_size_16": "-cache:il1 il1:16:64:1:l",
+            "icache_size_32": "-cache:il1 il1:32:64:1:l",
+            "icache_size_64": "-cache:il1 il1:64:64:1:l",
+            "icache_size_128": "-cache:il1 il1:128:64:1:l",
+            "icache_size_256": "-cache:il1 il1:256:64:1:l",
+
+            "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
+            "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
+            "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
+            "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
+            "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+        },
+        "bpred":
+        {
+            "dummy": ["",""]
+        },
+        "fast":
+        {
+            "dummy": ["",""]
+        },
+        "cheetah":
+        {
+            "dummy": ["",""]
+        },
+        "outorder":
+        {
+            "dummy": ["",""]
+        }
+    },
+    "cc1":
+    {
+        "cache":
+        {
+            "dummy": ["",""]
+        },
+        "bpred":
+        {
+            "dummy": ["",""]
+        },
+        "fast":
+        {
+            "dummy": ["",""]
+        },
+        "cheetah":
+        {
+            "dummy": ["",""]
+        },
+        "outorder":
+        {
+            "dummy": ["",""]
+        }
+    },
+    "compress":
+    {
+        "cache":
+        {
+            "dummy": ["",""]
+        },
+        "bpred":
+        {
+            "dummy": ["",""]
+        },
+        "fast":
+        {
+            "dummy": ["",""]
+        },
+        "cheetah":
+        {
+            "dummy": ["",""]
+        },
+        "outorder":
+        {
+            "dummy": ["",""]
+        }
+    },
+    "ijpeg":
+    {
+        "cache":
+        {
+            "dummy": ["",""]
+        },
+        "bpred":
+        {
+            "dummy": ["",""]
+        },
+        "fast":
+        {
+            "dummy": ["",""]
+        },
+        "cheetah":
+        {
+            "dummy": ["",""]
+        },
+        "outorder":
+        {
+            "dummy": ["",""]
+        }
+    },
+    "mgrid":
+    {
+        "cache":
+        {
+            "dummy": ["",""]
+        },
+        "bpred":
+        {
+            "dummy": ["",""]
+        },
+        "fast":
+        {
+            "dummy": ["",""]
+        },
+        "cheetah":
+        {
+            "dummy": ["",""]
+        },
+        "outorder":
+        {
+            "dummy": ["",""]
+        }
+    }
+}
