@@ -98,8 +98,14 @@ static struct mem_t *mem = NULL;
 /* maximum number of inst's to execute */
 static unsigned int max_insts;
 
-/* counter for loads and stores */
-static unsigned int counter;
+/* loads / store option */
+static unsigned int opt_load;
+
+/* counter for loads */
+static counter_t counter_loads = 0;
+
+/* counter for stores */
+static counter_t counter_stores = 0;
 
 /* branch predictor type {nottaken|taken|perfect|bimod|2lev} */
 static char *pred_type;
@@ -202,11 +208,9 @@ sim_reg_options(struct opt_odb_t *odb)
 		   /* default */btb_config,
 		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
 
-  opt_reg_int_list(odb, "-contor:LD",
-		   "BTB config (<num_sets> <associativity>)",
-		   btb_config, btb_nelt, &btb_nelt,
-		   /* default */btb_config,
-		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
+  opt_reg_uint(odb, "-contor:LD", "coutner for loads and store",
+	       &opt_load, /* default */0,
+	       /* print */TRUE, /* format */NULL);
 }
 
 /* check simulator-specific option values */
@@ -292,6 +296,19 @@ sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
 void
 sim_reg_stats(struct stat_sdb_t *sdb)
 {
+  if (opt_load)
+  {
+    stat_reg_counter(sdb, "counter_loads",
+        "total number of loads executed",
+        &counter_loads, 0, NULL);
+  }
+  else
+  {
+    stat_reg_counter(sdb, "counter_stores",
+        "total number of stores executed",
+        &counter_stores, 0, NULL);
+
+  }
   stat_reg_counter(sdb, "sim_num_insn",
 		   "total number of instructions executed",
 		   &sim_num_insn, sim_num_insn, NULL);
@@ -530,6 +547,11 @@ sim_main(void)
 	default:
 	  panic("attempted to execute a bogus opcode");
       }
+
+      if (MD_OP_FLAGS(op) & F_LOAD)
+        counter_loads++;
+      if (MD_OP_FLAGS(op) & F_STORE)
+        counter_stores++;
 
       if (fault != md_fault_none)
 	fatal("fault (%d) detected @ 0x%08p", fault, regs.regs_PC);
