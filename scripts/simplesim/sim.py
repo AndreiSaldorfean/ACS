@@ -37,29 +37,28 @@ def get_input():
 
 
 def get_commands(benchmark_cfg: dict):
-
     sim_root = os.path.join(script_path, "..", "..", "simplesim-3.0")
     commands = []
 
     for benchmark in benchmark_cfg:
-
         executable_file = benchmark_cfg[benchmark]["executable_file"]
         input_file = benchmark_cfg[benchmark]["input"]
         max_instructions = benchmark_cfg[benchmark]["max_instructions"]
 
-        for sim in benchmark_cfg[benchmark]["simulators"]:
+        simulators = benchmark_cfg[benchmark]["simulators"]
+        for sim in simulators:
             os.makedirs(out_dir_root + "/" + benchmark + "/" + sim, exist_ok=True)
             benchmark_dir = os.path.join(out_dir_root + "/" + benchmark, sim)
             os.makedirs(benchmark_dir, exist_ok=True)
 
-            for config in benchmark_cfg[benchmark]["simulators"][sim]:
-
-                cfg_value = benchmark_cfg[benchmark]["simulators"][sim][config]
-                cfg_name = config
-                sim_out = os.path.join(benchmark_dir, f"{cfg_name}_simout.res")
-                prog_out = os.path.join(benchmark_dir, f"{cfg_name}_progout.res")
-                cmd = f"{sim_root}/sim-{sim} -redir:sim {sim_out} -redir:prog {prog_out} -max:inst {max_instructions} {cfg_value} {executable_file} {input_file}"
-                commands.append(cmd)
+            sim_config_list = simulators[sim]
+            # sim_config_list is a list of dicts, each dict has multiple configs
+            for config_dict in sim_config_list:
+                for cfg_name, cfg_value in config_dict.items():
+                    sim_out = os.path.join(benchmark_dir, f"{cfg_name}_simout.res")
+                    prog_out = os.path.join(benchmark_dir, f"{cfg_name}_progout.res")
+                    cmd = f"{sim_root}/sim-{sim} -redir:sim {sim_out} -redir:prog {prog_out} -max:inst {max_instructions} {cfg_value} {executable_file} {input_file}"
+                    commands.append(cmd)
 
     return commands
 
