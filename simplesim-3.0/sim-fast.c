@@ -141,6 +141,9 @@ static struct regs_t regs;
 /* simulated memory */
 static struct mem_t *mem = NULL;
 
+/* maximum number of inst's to execute */
+static unsigned int max_insts;
+
 #ifdef TARGET_ALPHA
 /* predecoded text memory */
 static struct mem_t *dec = NULL;
@@ -150,7 +153,7 @@ static struct mem_t *dec = NULL;
 void
 sim_reg_options(struct opt_odb_t *odb)
 {
-  opt_reg_header(odb, 
+  opt_reg_header(odb,
 "sim-fast: This simulator implements a very fast functional simulator.  This\n"
 "functional simulator implementation is much more difficult to digest than\n"
 "the simpler, cleaner sim-safe functional simulator.  By default, this\n"
@@ -159,6 +162,11 @@ sim_reg_options(struct opt_odb_t *odb)
 "causing sim-fast to execute incorrectly or dump core.  Such is the\n"
 "price we pay for speed!!!!\n"
 		 );
+
+  /* instruction limit */
+  opt_reg_uint(odb, "-max:inst", "maximum number of inst's to execute",
+	       &max_insts, /* default */0,
+	       /* print */TRUE, /* format */NULL);
 }
 
 /* check simulator-specific option values */
@@ -496,6 +504,10 @@ sim_main(void)
       /* execute next instruction */
       regs.regs_PC = regs.regs_NPC;
       regs.regs_NPC += sizeof(md_inst_t);
+
+      /* finish early? */
+      if (max_insts && (sim_num_insn >= max_insts))
+        return;
     }
 
 #endif /* USE_JUMP_TABLE */
