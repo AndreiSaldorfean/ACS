@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 try:
     from tqdm import tqdm
 except ImportError:
@@ -81,21 +82,30 @@ def run_command(command: str):
 
 
 def main():
-
     cleanup()
-
     benchmark_cfg = get_input()
     commands = get_commands(benchmark_cfg)
 
+    max_workers = min(8, os.cpu_count() or 1)  # Use up to 8 threads or CPU count
 
     if tqdm is None:
         print("tqdm not installed. Progress bar will not be shown. To enable, install tqdm: pip install tqdm")
-        iterator = commands
+        progress = None
     else:
-        iterator = tqdm(commands, desc="Running simulations", unit="sim")
+        progress = tqdm(total=len(commands), desc="Running simulations", unit="sim")
 
-    for cmd in iterator:
+    def run_and_update(cmd):
         run_command(cmd)
+        if progress:
+            progress.update(1)
 
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [executor.submit(run_and_update, cmd) for cmd in commands]
+        for f in as_completed(futures):
+            pass  # All progress is handled in run_and_update
 
-main()
+    if progress:
+        progress.close()
+
+if __name__ == "__main__":
+    main()
