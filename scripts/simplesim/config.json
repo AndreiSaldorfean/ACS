@@ -1,46 +1,61 @@
 {
     "applu": {
         "simulators": {
-            "cache": {
+            "cache": [
+                {
                 "icache_size_16": "-cache:il1 il1:16:64:1:l",
                 "icache_size_32": "-cache:il1 il1:32:64:1:l",
                 "icache_size_64": "-cache:il1 il1:64:64:1:l",
                 "icache_size_128": "-cache:il1 il1:128:64:1:l",
-                "icache_size_256": "-cache:il1 il1:256:64:1:l",
-
+                "icache_size_256": "-cache:il1 il1:256:64:1:l"
+                },
+                {
                 "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
                 "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
                 "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
                 "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
-                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l",
-
+                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+                },
+                {
                 "icache_evac_l": "-cache:il1 il1:256:64:1:l",
                 "icache_evac_r": "-cache:il1 il1:256:64:1:r",
-                "icache_evac_f": "-cache:il1 il1:256:64:1:f",
-
+                "icache_evac_f": "-cache:il1 il1:256:64:1:f"
+                },
+                {
                 "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
                 "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
-            },
-            "bpred": {
+                }
+            ],
+            "bpred": [
+                {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
                 "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
                 "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
                 "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
-                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0"
+                },
+                {
                 "btb_cfg0": "-bpred:btb 512 4",
                 "btb_cfg1": "-bpred:btb 1024 4",
                 "btb_cfg2": "-bpred:btb 2048 4"
-            },
-            "fast": {
+                }
+            ],
+            "fast": [
+                {
                 "config": ""
-            },
-            "cheetah": {
+                }
+            ],
+            "cheetah": [
+                {
                 "config": ""
-            },
-            "outorder": {
+                }
+            ],
+            "outorder": [
+                {
                 "config": ""
-            }
+                }
+            ]
         },
         "executable_file": "../../inputs/ss_files/applu.ss",
         "input": "< ../../inputs/in_files/applu.in",
@@ -48,28 +63,61 @@
     },
     "cc1": {
         "simulators": {
-            "cache": {
-                "config": ""
-            },
-            "bpred": {
+            "cache": [
+                {
+                "icache_size_16": "-cache:il1 il1:16:64:1:l",
+                "icache_size_32": "-cache:il1 il1:32:64:1:l",
+                "icache_size_64": "-cache:il1 il1:64:64:1:l",
+                "icache_size_128": "-cache:il1 il1:128:64:1:l",
+                "icache_size_256": "-cache:il1 il1:256:64:1:l"
+                },
+                {
+                "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
+                "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
+                "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
+                "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
+                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+                },
+                {
+                "icache_evac_l": "-cache:il1 il1:256:64:1:l",
+                "icache_evac_r": "-cache:il1 il1:256:64:1:r",
+                "icache_evac_f": "-cache:il1 il1:256:64:1:f"
+                },
+                {
+                "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
+                "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
+                "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "bpred": [
+                {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
                 "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
                 "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
                 "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
-                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0"
+                },
+                {
                 "btb_cfg0": "-bpred:btb 512 4",
                 "btb_cfg1": "-bpred:btb 1024 4",
                 "btb_cfg2": "-bpred:btb 2048 4"
-            },
-            "fast": {
+                }
+            ],
+            "fast": [
+                {
                 "config": ""
-            },
-            "cheetah": {
+                }
+            ],
+            "cheetah": [
+                {
                 "config": ""
-            },
-            "outorder": {
+                }
+            ],
+            "outorder": [
+                {
                 "config": ""
-            }
+                }
+            ]
         },
         "executable_file": "../../inputs/ss_files/cc1.ss",
         "input": "< ../../inputs/in_files/1stmt.i",
@@ -77,28 +125,61 @@
     },
     "compress": {
         "simulators": {
-            "cache": {
-                "config": ""
-            },
-            "bpred": {
+            "cache": [
+                {
+                "icache_size_16": "-cache:il1 il1:16:64:1:l",
+                "icache_size_32": "-cache:il1 il1:32:64:1:l",
+                "icache_size_64": "-cache:il1 il1:64:64:1:l",
+                "icache_size_128": "-cache:il1 il1:128:64:1:l",
+                "icache_size_256": "-cache:il1 il1:256:64:1:l"
+                },
+                {
+                "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
+                "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
+                "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
+                "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
+                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+                },
+                {
+                "icache_evac_l": "-cache:il1 il1:256:64:1:l",
+                "icache_evac_r": "-cache:il1 il1:256:64:1:r",
+                "icache_evac_f": "-cache:il1 il1:256:64:1:f"
+                },
+                {
+                "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
+                "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
+                "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "bpred": [
+                {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
                 "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
                 "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
                 "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
-                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0"
+                },
+                {
                 "btb_cfg0": "-bpred:btb 512 4",
                 "btb_cfg1": "-bpred:btb 1024 4",
                 "btb_cfg2": "-bpred:btb 2048 4"
-            },
-            "fast": {
+                }
+            ],
+            "fast": [
+                {
                 "config": ""
-            },
-            "cheetah": {
+                }
+            ],
+            "cheetah": [
+                {
                 "config": ""
-            },
-            "outorder": {
+                }
+            ],
+            "outorder": [
+                {
                 "config": ""
-            }
+                }
+            ]
         },
         "executable_file": "../../inputs/ss_files/compress95.ss",
         "input": "-nice 1 < ../../inputs/in_files/applu.in",
@@ -106,28 +187,61 @@
     },
     "ijpeg": {
         "simulators": {
-            "cache": {
-                "config": ""
-            },
-            "bpred": {
+            "cache": [
+                {
+                "icache_size_16": "-cache:il1 il1:16:64:1:l",
+                "icache_size_32": "-cache:il1 il1:32:64:1:l",
+                "icache_size_64": "-cache:il1 il1:64:64:1:l",
+                "icache_size_128": "-cache:il1 il1:128:64:1:l",
+                "icache_size_256": "-cache:il1 il1:256:64:1:l"
+                },
+                {
+                "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
+                "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
+                "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
+                "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
+                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+                },
+                {
+                "icache_evac_l": "-cache:il1 il1:256:64:1:l",
+                "icache_evac_r": "-cache:il1 il1:256:64:1:r",
+                "icache_evac_f": "-cache:il1 il1:256:64:1:f"
+                },
+                {
+                "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
+                "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
+                "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "bpred": [
+                {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
                 "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
                 "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
                 "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
-                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0"
+                },
+                {
                 "btb_cfg0": "-bpred:btb 512 4",
                 "btb_cfg1": "-bpred:btb 1024 4",
                 "btb_cfg2": "-bpred:btb 2048 4"
-            },
-            "fast": {
+                }
+            ],
+            "fast": [
+                {
                 "config": ""
-            },
-            "cheetah": {
+                }
+            ],
+            "cheetah": [
+                {
                 "config": ""
-            },
-            "outorder": {
+                }
+            ],
+            "outorder": [
+                {
                 "config": ""
-            }
+                }
+            ]
         },
         "executable_file": "../../inputs/ss_files/ijpeg.ss",
         "input": "< ../../inputs/in_files/vigo.ppm",
@@ -135,28 +249,61 @@
     },
     "mgrid": {
         "simulators": {
-            "cache": {
-                "config": ""
-            },
-            "bpred": {
+            "cache": [
+                {
+                "icache_size_16": "-cache:il1 il1:16:64:1:l",
+                "icache_size_32": "-cache:il1 il1:32:64:1:l",
+                "icache_size_64": "-cache:il1 il1:64:64:1:l",
+                "icache_size_128": "-cache:il1 il1:128:64:1:l",
+                "icache_size_256": "-cache:il1 il1:256:64:1:l"
+                },
+                {
+                "dcache_size_1": "-cache:dl1 dl1:256:64:1:l",
+                "dcache_size_2": "-cache:dl1 dl1:256:64:2:l",
+                "dcache_size_4": "-cache:dl1 dl1:256:64:4:l",
+                "dcache_size_8": "-cache:dl1 dl1:256:64:8:l",
+                "dcache_size_16": "-cache:dl1 dl1:256:64:16:l"
+                },
+                {
+                "icache_evac_l": "-cache:il1 il1:256:64:1:l",
+                "icache_evac_r": "-cache:il1 il1:256:64:1:r",
+                "icache_evac_f": "-cache:il1 il1:256:64:1:f"
+                },
+                {
+                "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
+                "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
+                "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "bpred": [
+                {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
                 "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
                 "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
                 "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
-                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0"
+                },
+                {
                 "btb_cfg0": "-bpred:btb 512 4",
                 "btb_cfg1": "-bpred:btb 1024 4",
                 "btb_cfg2": "-bpred:btb 2048 4"
-            },
-            "safe": {
+                }
+            ],
+            "fast": [
+                {
                 "config": ""
-            },
-            "cheetah": {
+                }
+            ],
+            "cheetah": [
+                {
                 "config": ""
-            },
-            "outorder": {
+                }
+            ],
+            "outorder": [
+                {
                 "config": ""
-            }
+                }
+            ]
         },
         "executable_file": "../../inputs/ss_files/mgrid.ss",
         "input": "-nice 1 < ../../inputs/in_files/mgrid.in",
