@@ -23,7 +23,14 @@
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
             },
             "bpred": {
-                "config": ""
+                "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
+                "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
+                "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
+                "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "btb_cfg0": "-bpred:btb 512 4",
+                "btb_cfg1": "-bpred:btb 1024 4",
+                "btb_cfg2": "-bpred:btb 2048 4"
             },
             "fast": {
                 "config": ""
@@ -45,7 +52,14 @@
                 "config": ""
             },
             "bpred": {
-                "config": ""
+                "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
+                "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
+                "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
+                "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "btb_cfg0": "-bpred:btb 512 4",
+                "btb_cfg1": "-bpred:btb 1024 4",
+                "btb_cfg2": "-bpred:btb 2048 4"
             },
             "fast": {
                 "config": ""
@@ -67,7 +81,14 @@
                 "config": ""
             },
             "bpred": {
-                "config": ""
+                "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
+                "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
+                "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
+                "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "btb_cfg0": "-bpred:btb 512 4",
+                "btb_cfg1": "-bpred:btb 1024 4",
+                "btb_cfg2": "-bpred:btb 2048 4"
             },
             "fast": {
                 "config": ""
@@ -83,13 +104,20 @@
         "input": "-nice 1 < ../../inputs/in_files/applu.in",
         "max_instructions": 25000000
     },
-    "ijpeg":{
+    "ijpeg": {
         "simulators": {
             "cache": {
                 "config": ""
             },
             "bpred": {
-                "config": ""
+                "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
+                "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
+                "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
+                "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "btb_cfg0": "-bpred:btb 512 4",
+                "btb_cfg1": "-bpred:btb 1024 4",
+                "btb_cfg2": "-bpred:btb 2048 4"
             },
             "fast": {
                 "config": ""
@@ -101,8 +129,37 @@
                 "config": ""
             }
         },
-        "executable_file": "../../inputs/ss_files/compress95.ss",
-        "input": "-nice 1 < ../../inputs/in_files/applu.in",
+        "executable_file": "../../inputs/ss_files/ijpeg.ss",
+        "input": "< ../../inputs/in_files/vigo.ppm",
+        "max_instructions": 25000000
+    },
+    "mgrid": {
+        "simulators": {
+            "cache": {
+                "config": ""
+            },
+            "bpred": {
+                "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
+                "cfg1": "-bpred 2lev -bpred:2lev 1 1024 8 0",
+                "cfg2": "-bpred 2lev -bpred:2lev 2 256 8 0",
+                "cfg3": "-bpred 2lev -bpred:2lev 4 256 8 0",
+                "cfg5": "-bpred 2lev -bpred:2lev 1 512 8 0",
+                "btb_cfg0": "-bpred:btb 512 4",
+                "btb_cfg1": "-bpred:btb 1024 4",
+                "btb_cfg2": "-bpred:btb 2048 4"
+            },
+            "safe": {
+                "config": ""
+            },
+            "cheetah": {
+                "config": ""
+            },
+            "outorder": {
+                "config": ""
+            }
+        },
+        "executable_file": "../../inputs/ss_files/mgrid.ss",
+        "input": "-nice 1 < ../../inputs/in_files/mgrid.in",
         "max_instructions": 25000000
     }
 }
