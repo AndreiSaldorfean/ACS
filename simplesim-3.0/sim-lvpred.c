@@ -174,7 +174,7 @@ sim_reg_options(struct opt_odb_t *odb)
 	       /* print */TRUE, /* format */NULL);
 
   /* load/store instructions counter */
-  opt_reg_uint(odb, "-max:inst", "maximum number of inst's to execute",
+  opt_reg_uint(odb, "-contor:LD" , "maximum number of inst's to execute",
 	       &opt_load, /* default */0,
 	       /* print */TRUE, /* format */NULL);
 
