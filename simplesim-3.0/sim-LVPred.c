@@ -101,11 +101,20 @@ static unsigned int max_insts;
 /* loads / store option */
 static unsigned int opt_load;
 
+/* history option */
+static unsigned int opt_history;
+
 /* counter for loads */
 static counter_t counter_loads = 0;
 
 /* counter for stores */
 static counter_t counter_stores = 0;
+
+/* counter for prime number*/
+static counter_t prime_num_counter = 0;
+
+/* counter for current prime number*/
+static counter_t current_prime_num = 2;
 
 /* branch predictor type {nottaken|taken|perfect|bimod|2lev} */
 static char *pred_type;
@@ -142,6 +151,16 @@ static counter_t sim_num_refs = 0;
 /* total number of branches executed */
 static counter_t sim_num_branches = 0;
 
+/* Determines wheter a given integer is prime or not*/
+bool_t
+IsPrime(int num){
+
+  for(int i = 2; i <= num/2; i++){
+    if(num%i == 0)
+      return 0;
+  }
+  return 1;
+}
 
 /* register simulator-specific options */
 void
@@ -208,9 +227,14 @@ sim_reg_options(struct opt_odb_t *odb)
 		   /* default */btb_config,
 		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
 
-  opt_reg_uint(odb, "-contor:LD", "coutner for loads and store",
+  opt_reg_uint(odb, "-contor:LD", "counter for loads and store instructions",
 	       &opt_load, /* default */0,
 	       /* print */TRUE, /* format */NULL);
+
+   /* print first N prime numbers*/
+  opt_reg_uint(odb, "-history:n" , "compute first N prime numbers",
+	       &opt_history, /* default */0,
+	       /* print */TRUE, /* format */NULL);      
 }
 
 /* check simulator-specific option values */
@@ -296,7 +320,7 @@ sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
 void
 sim_reg_stats(struct stat_sdb_t *sdb)
 {
-  if (opt_load)
+  if (opt_load == 1)
   {
     stat_reg_counter(sdb, "counter_loads",
         "total number of loads executed",
@@ -552,6 +576,18 @@ sim_main(void)
         counter_loads++;
       if (MD_OP_FLAGS(op) & F_STORE)
         counter_stores++;
+
+      if(prime_num_counter < opt_history)
+      {
+
+        bool_t is_prime = IsPrime(current_prime_num);
+        if(is_prime)
+          {
+            printf("Nr prim: %d\n",current_prime_num);
+            prime_num_counter++;
+          }
+        current_prime_num++;
+      }
 
       if (fault != md_fault_none)
 	fatal("fault (%d) detected @ 0x%08p", fault, regs.regs_PC);
