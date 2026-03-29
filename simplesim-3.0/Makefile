@@ -361,8 +361,7 @@ HDRS =	syscall.h memory.h regs.h sim.h loader.h cache.h LVPred.h ptrace.h \
 	eio.h range.h version.h endian.h misc.h \
 	target-pisa/pisa.h target-pisa/pisabig.h target-pisa/pisalittle.h \
 	target-pisa/pisa.def target-pisa/ecoff.h \
-	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h \
-	bpred.h LVPred.h
+	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h 
 
 #
 # common objects
@@ -457,7 +456,7 @@ sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo
 sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-bpred$(EEXT) $(CFLAGS) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
-sim-LVpred$(EEXT):	sysprobe$(EEXT) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
+sim-LVPred$(EEXT):	sysprobe$(EEXT) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-LVPred$(EEXT) $(CFLAGS) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
 sim-cheetah$(EEXT):	sysprobe$(EEXT) sim-cheetah.$(OEXT) $(OBJS) libcheetah/libcheetah.$(LEXT) libexo/libexo.$(LEXT)
