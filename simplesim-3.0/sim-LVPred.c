@@ -82,12 +82,14 @@
 #include "dlite.h"
 #include "options.h"
 #include "stats.h"
-#include "bpred.h"
+#include "LVPred.h"
 #include "sim.h"
 
 /*
  * This file implements a branch predictor analyzer.
  */
+
+static LVPTaddrList lvpt_head;
 
 /* simulated registers */
 static struct regs_t regs;
@@ -572,8 +574,20 @@ sim_main(void)
 	  panic("attempted to execute a bogus opcode");
       }
 
-      if (MD_OP_FLAGS(op) & F_LOAD)
+      if (MD_OP_FLAGS(op) & F_LOAD) {
         counter_loads++;
+        // LVPT logic: call functions for load value prediction
+        // Example: use regs.regs_PC as instruction address, and GPR(RT) as value
+        md_addr_t load_addr = regs.regs_PC;
+        sword_t load_value = GPR(RT);
+        int history = 0; // Set history as needed for your implementation
+
+        // Check if address is in LVPT
+        int found = foundAssociativeLVPTAddress(load_addr, load_value, history);
+        insertLVPTValue(lvpt_head, load_value, history);
+        sword_t predicted = predictValue(lvpt_head, history);
+        // You can add statistics or checks here as needed
+      }
       if (MD_OP_FLAGS(op) & F_STORE)
         counter_stores++;
 

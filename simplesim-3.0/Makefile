@@ -361,8 +361,7 @@ HDRS =	syscall.h memory.h regs.h sim.h loader.h cache.h LVPred.h ptrace.h \
 	eio.h range.h version.h endian.h misc.h \
 	target-pisa/pisa.h target-pisa/pisabig.h target-pisa/pisalittle.h \
 	target-pisa/pisa.def target-pisa/ecoff.h \
-	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h \
-	LVPred.h
+	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h 
 
 #
 # common objects
@@ -376,7 +375,7 @@ OBJS =	main.$(OEXT) syscall.$(OEXT) memory.$(OEXT) regs.$(OEXT) \
 # programs to build
 #
 PROGS = sim-fast$(EEXT) sim-safe$(EEXT) sim-eio$(EEXT) \
-	sim-bpred$(EEXT) sim-profile$(EEXT) \
+	sim-bpred$(EEXT) sim-LVPred$(EEXT) sim-profile$(EEXT) \
 	sim-cheetah$(EEXT) sim-cache$(EEXT) sim-outorder$(EEXT) \
 	
 
@@ -452,10 +451,10 @@ sim-profile$(EEXT):	sysprobe$(EEXT) sim-profile.$(OEXT) $(OBJS) libexo/libexo.$(
 sim-eio$(EEXT):	sysprobe$(EEXT) sim-eio.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-eio$(EEXT) $(CFLAGS) sim-eio.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
-# sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
-# 	$(CC) -o sim-bpred$(EEXT) $(CFLAGS) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
+sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
+	$(CC) -o sim-bpred$(EEXT) $(CFLAGS) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
-sim-bpred$(EEXT):	sysprobe$(EEXT) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
+sim-LVPred$(EEXT):	sysprobe$(EEXT) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-LVPred$(EEXT) $(CFLAGS) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
 sim-cheetah$(EEXT):	sysprobe$(EEXT) sim-cheetah.$(OEXT) $(OBJS) libcheetah/libcheetah.$(LEXT) libexo/libexo.$(LEXT)
@@ -557,9 +556,9 @@ sim-profile.$(OEXT): symbol.h sim.h
 sim-eio.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
 sim-eio.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h eio.h
 sim-eio.$(OEXT): range.h sim.h
-# sim-bpred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
-# sim-bpred.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h
-# sim-bpred.$(OEXT): bpred.h sim.h
+sim-bpred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
+sim-bpred.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h
+sim-bpred.$(OEXT): bpred.h sim.h
 sim-LVPred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
 sim-LVPred.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h
 sim-LVPred.$(OEXT): LVPred.h sim.h
@@ -576,7 +575,7 @@ regs.$(OEXT): host.h misc.h machine.h machine.def loader.h regs.h memory.h
 regs.$(OEXT): options.h stats.h eval.h
 cache.$(OEXT): host.h misc.h machine.h machine.def cache.h memory.h options.h
 cache.$(OEXT): stats.h eval.h
-# bpred.$(OEXT): host.h misc.h machine.h machine.def bpred.h stats.h eval.h
+bpred.$(OEXT): host.h misc.h machine.h machine.def bpred.h stats.h eval.h
 LVPred.$(OEXT): host.h misc.h machine.h machine.def LVPred.h stats.h eval.h
 ptrace.$(OEXT): host.h misc.h machine.h machine.def range.h ptrace.h
 eventq.$(OEXT): host.h misc.h machine.h machine.def eventq.h bitmap.h

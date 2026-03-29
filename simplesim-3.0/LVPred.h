@@ -1,5 +1,5 @@
 /*
- * bpred.h - branch predictor interfaces
+ * LVPred.h - branch predictor interfaces
  *
  * This file is a part of the SimpleScalar tool suite written by
  * Todd M. Austin as a part of the Multiscalar Research Project.
@@ -49,9 +49,9 @@
  * INTERNET: dburger@cs.wisc.edu
  * US Mail:  1210 W. Dayton Street, Madison, WI 53706
  *
- * $Id: bpred.h,v 1.1.1.1 2000/05/26 15:18:57 taustin Exp $
+ * $Id: LVPred.h,v 1.1.1.1 2000/05/26 15:18:57 taustin Exp $
  *
- * $Log: bpred.h,v $
+ * $Log: LVPred.h,v $
  * Revision 1.1.1.1  2000/05/26 15:18:57  taustin
  * SimpleScalar Tool Set
  *
@@ -100,8 +100,8 @@
  *
  */
 
-#ifndef BPRED_H
-#define BPRED_H
+#ifndef LVPRED_H
+#define LVPRED_H
 
 #define dassert(a) assert(a)
 
@@ -259,6 +259,33 @@ bpred_dir_create (
   unsigned int shift_width,	/* history register width */
   unsigned int xor);	   	/* history xor address flag */
 
+static int valuePrediction;
+static int classifiedPred;
+static int predictable;
+static int unpredictable;
+static int classifiedUnpred;
+
+typedef struct LVPTlocation *LVPTaddrList;
+typedef struct LVPTelement *LVPTvalueList;
+
+typedef struct LVPTlocation {
+    md_addr_t addr; /* – adresa instructiunii sau adresa datei; */
+    LVPTaddrList nextAddress;
+    LVPTvalueList values;
+    int automat; /* – este un automat cu patru stari (numarator saturat
+                    pe doi biti). Un Load este nepredictibil daca
+                    automatul acestuia se afla în starea 0 sau 1 si este
+                    predictibil daca automatul se afla în starea 2 sau 3; */
+
+    // sword_t stride[2]; - va fi folosit pentru dezvoltari ulterioare (predictorul incremental)
+}LVPTLocation_t;
+
+typedef struct LVPTelement{
+    sword_t value; /* – reprezinta lista valorilor pentru Load-ul respectiv; */
+    LVPTvalueList nextValue;
+    // int count; - va fi folosit pentru dezvoltari ulterioare (predictorul contextual)
+}LVPTElement_t;
+
 /* print branch predictor configuration */
 void
 bpred_config(struct bpred_t *pred,	/* branch predictor instance */
@@ -332,4 +359,8 @@ bpred_dump(struct bpred_t *pred,	/* branch predictor instance */
 	   FILE *stream);		/* output stream */
 #endif
 
-#endif /* BPRED_H */
+void insertLVPTValue(LVPTaddrList ad, sword_t value, int history);
+sword_t predictValue(LVPTaddrList p, int history);
+int foundAssociativeLVPTAddress(md_addr_t addr, sword_t value, int history);
+
+#endif /* LVPRED_H */
