@@ -222,6 +222,7 @@ struct bpred_t {
   counter_t retstack_pops;	/* number of times a value was popped */
   counter_t retstack_pushes;	/* number of times a value was pushed */
   counter_t ras_hits;		/* num correct return-address predictions */
+  // double degree_of_locality; /* Custom: degree of locality percentage (0.0 - 100.0) */
 };
 
 /* branch predictor update information */

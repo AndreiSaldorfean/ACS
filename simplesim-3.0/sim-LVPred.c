@@ -89,6 +89,9 @@
  * This file implements a branch predictor analyzer.
  */
 
+static counter_t predicted_loads_cnt = 0;
+
+extern LVPTaddrList lvpt;
 static LVPTaddrList lvpt_head;
 
 /* simulated registers */
@@ -341,9 +344,19 @@ sim_reg_stats(struct stat_sdb_t *sdb)
   stat_reg_counter(sdb, "sim_num_refs",
 		   "total number of loads and stores executed",
 		   &sim_num_refs, 0, NULL);
+
+  stat_reg_counter(sdb, "predicted_loads",
+		   "total number of predicted loads",
+		   &predicted_loads_cnt, 0, NULL);
+
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
+
+  // stat_reg_formula(sdb, "degree_of_locality",
+	// 	   "degree of locality (number of predicted values / number of dynamic loads)",
+	// 	   "counter_loads / predicted_loads", NULL);
+
   stat_reg_formula(sdb, "sim_inst_rate",
 		   "simulation speed (in insts/sec)",
 		   "sim_num_insn / sim_elapsed_time", NULL);
@@ -584,9 +597,11 @@ sim_main(void)
 
         // Check if address is in LVPT
         int found = foundAssociativeLVPTAddress(load_addr, load_value, history);
-        insertLVPTValue(lvpt_head, load_value, history);
-        sword_t predicted = predictValue(lvpt_head, history);
-        // You can add statistics or checks here as needed
+        insertLVPTValue(lvpt, load_value, history);
+        if(predictValue(lvpt, history) != 0)
+        {
+          predicted_loads_cnt++;
+        }
       }
       if (MD_OP_FLAGS(op) & F_STORE)
         counter_stores++;

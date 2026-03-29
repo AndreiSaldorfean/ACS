@@ -528,8 +528,12 @@ bpred_reg_stats(struct bpred_t *pred,	/* branch predictor instance */
   sprintf(buf, "%s.ras_rate.PP", name);
   sprintf(buf1, "%s.ras_hits.PP / %s.used_ras.PP", name, name);
   stat_reg_formula(sdb, buf,
-		   "RAS prediction rate (i.e., RAS hits/used RAS)",
-		   buf1, "%9.4f");
+        "RAS prediction rate (i.e., RAS hits/used RAS)",
+        buf1, "%9.4f");
+
+  // // Degree of locality stat (percentage)
+  // sprintf(buf, "%s.degree_of_locality", name);
+  // stat_reg_formula(sdb, buf, "degree of locality (percentage)", buf, "%9.2f");
 }
 
 void
@@ -550,6 +554,7 @@ bpred_after_priming(struct bpred_t *bpred)
   bpred->retstack_pops = 0;
   bpred->retstack_pushes = 0;
   bpred->ras_hits = 0;
+  // bpred->degree_of_locality = 0;
 }
 
 #define BIMOD_HASH(PRED, ADDR)						\
