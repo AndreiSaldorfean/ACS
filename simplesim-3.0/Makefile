@@ -347,7 +347,8 @@ SRCS =	main.c sim-fast.c sim-safe.c sim-cache.c sim-profile.c \
 	target-pisa/symbol.c \
 	target-alpha/alpha.c target-alpha/loader.c target-alpha/syscall.c \
 	target-alpha/symbol.c  sim-bpred.c  bpred.c \
-	sim-LVPred.c LVPred.c
+	sim-LVPred.c LVPred.c \
+	sim-spred.c spred.c
 
 # HDRS =	syscall.h memory.h regs.h sim.h loader.h cache.h bpred.h ptrace.h \
 # 	eventq.h resource.h endian.h dlite.h symbol.h eval.h bitmap.h \
@@ -361,7 +362,8 @@ HDRS =	syscall.h memory.h regs.h sim.h loader.h cache.h LVPred.h ptrace.h \
 	eio.h range.h version.h endian.h misc.h \
 	target-pisa/pisa.h target-pisa/pisabig.h target-pisa/pisalittle.h \
 	target-pisa/pisa.def target-pisa/ecoff.h \
-	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h 
+	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h \
+	spred.h
 
 #
 # common objects
@@ -377,7 +379,8 @@ OBJS =	main.$(OEXT) syscall.$(OEXT) memory.$(OEXT) regs.$(OEXT) \
 PROGS = sim-fast$(EEXT) sim-safe$(EEXT) sim-eio$(EEXT) \
 	sim-bpred$(EEXT) sim-LVPred$(EEXT) sim-profile$(EEXT) \
 	sim-cheetah$(EEXT) sim-cache$(EEXT) sim-outorder$(EEXT) \
-	sim-LVpred$(EEXT)
+	sim-LVPred$(EEXT)
+	sim-spred$(EEXT)
 
 #
 # all targets, NOTE: library ordering is important...
@@ -455,6 +458,9 @@ sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo
 	$(CC) -o sim-bpred$(EEXT) $(CFLAGS) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 sim-bpred$(EEXT):	sysprobe$(EEXT) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-bpred$(EEXT) $(CFLAGS) sim-bpred.$(OEXT) bpred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
+
+sim-spred$(EEXT): sysprobe$(EEXT) sim-spred.$(OEXT) spred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
+	$(CC) -o sim-spred$(EEXT) $(CFLAGS) sim-spred.$(OEXT) spred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
 
 sim-LVPred$(EEXT):	sysprobe$(EEXT) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT)
 	$(CC) -o sim-LVPred$(EEXT) $(CFLAGS) sim-LVPred.$(OEXT) LVPred.$(OEXT) $(OBJS) libexo/libexo.$(LEXT) $(MLIBS)
@@ -559,6 +565,7 @@ sim-eio.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
 sim-eio.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h eio.h
 sim-eio.$(OEXT): range.h sim.h
 sim-bpred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
+sim-spred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
 sim-bpred.$(OEXT): options.h stats.h eval.h loader.h syscall.h dlite.h
 sim-bpred.$(OEXT): bpred.h sim.h
 sim-bpred.$(OEXT): host.h misc.h machine.h machine.def regs.h memory.h
@@ -581,7 +588,7 @@ regs.$(OEXT): options.h stats.h eval.h
 cache.$(OEXT): host.h misc.h machine.h machine.def cache.h memory.h options.h
 cache.$(OEXT): stats.h eval.h
 bpred.$(OEXT): host.h misc.h machine.h machine.def bpred.h stats.h eval.h
-bpred.$(OEXT): host.h misc.h machine.h machine.def bpred.h stats.h eval.h
+spred.$(OEXT): host.h misc.h machine.h machine.def spred.h stats.h eval.h
 LVPred.$(OEXT): host.h misc.h machine.h machine.def LVPred.h stats.h eval.h
 ptrace.$(OEXT): host.h misc.h machine.h machine.def range.h ptrace.h
 eventq.$(OEXT): host.h misc.h machine.h machine.def eventq.h bitmap.h
