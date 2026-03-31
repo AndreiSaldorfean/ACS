@@ -1,0 +1,7 @@
+# Simulators output
+*.res
+*.log
+
+# SimpleSim build files
+*.o
+*.elf

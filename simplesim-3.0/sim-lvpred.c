@@ -1,5 +1,5 @@
 /*
- * sim-bpred.c - sample branch predictor simulator implementation
+ * sim-lvbpred.c - sample branch predictor simulator implementation
  *
  * This file is a part of the SimpleScalar tool suite written by
  * Todd M. Austin as a part of the Multiscalar Research Project.
@@ -82,17 +82,12 @@
 #include "dlite.h"
 #include "options.h"
 #include "stats.h"
-#include "LVPred.h"
+#include "bpred.h"
 #include "sim.h"
 
 /*
  * This file implements a branch predictor analyzer.
  */
-
-static counter_t predicted_loads_cnt = 0;
-
-extern LVPTaddrList lvpt;
-static LVPTaddrList lvpt_head;
 
 /* simulated registers */
 static struct regs_t regs;
@@ -103,23 +98,8 @@ static struct mem_t *mem = NULL;
 /* maximum number of inst's to execute */
 static unsigned int max_insts;
 
-/* loads / store option */
+/* enable the counter of load/store operations */
 static unsigned int opt_load;
-
-/* history option */
-static unsigned int opt_history;
-
-/* counter for loads */
-static counter_t counter_loads = 0;
-
-/* counter for stores */
-static counter_t counter_stores = 0;
-
-/* counter for prime number*/
-static counter_t prime_num_counter = 0;
-
-/* counter for current prime number*/
-static counter_t current_prime_num = 2;
 
 /* branch predictor type {nottaken|taken|perfect|bimod|2lev} */
 static char *pred_type;
@@ -153,26 +133,22 @@ static struct bpred_t *pred;
 /* track number of insn and refs */
 static counter_t sim_num_refs = 0;
 
+/* track number of STORE instructions*/
+static counter_t contor_stores = 0;
+
+/* track number of LOAD instructions*/
+static counter_t contor_loads = 0;
+
 /* total number of branches executed */
 static counter_t sim_num_branches = 0;
 
-/* Determines wheter a given integer is prime or not*/
-bool_t
-IsPrime(int num){
-
-  for(int i = 2; i <= num/2; i++){
-    if(num%i == 0)
-      return 0;
-  }
-  return 1;
-}
 
 /* register simulator-specific options */
 void
 sim_reg_options(struct opt_odb_t *odb)
 {
   opt_reg_header(odb, 
-"sim-bpred: This simulator implements a branch predictor analyzer.\n"
+"sim-lvpred: This simulator implements a branch predictor analyzer.\n"
 		 );
 
   /* branch predictor options */
@@ -195,6 +171,11 @@ sim_reg_options(struct opt_odb_t *odb)
   /* instruction limit */
   opt_reg_uint(odb, "-max:inst", "maximum number of inst's to execute",
 	       &max_insts, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+
+  /* load/store instructions counter */
+  opt_reg_uint(odb, "-contor:LD" , "maximum number of inst's to execute",
+	       &opt_load, /* default */0,
 	       /* print */TRUE, /* format */NULL);
 
   opt_reg_string(odb, "-bpred",
@@ -231,15 +212,6 @@ sim_reg_options(struct opt_odb_t *odb)
 		   btb_config, btb_nelt, &btb_nelt,
 		   /* default */btb_config,
 		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
-
-  opt_reg_uint(odb, "-contor:LD", "counter for loads and store instructions",
-	       &opt_load, /* default */0,
-	       /* print */TRUE, /* format */NULL);
-
-   /* print first N prime numbers*/
-  opt_reg_uint(odb, "-history:n" , "compute first N prime numbers",
-	       &opt_history, /* default */0,
-	       /* print */TRUE, /* format */NULL);      
 }
 
 /* check simulator-specific option values */
@@ -325,19 +297,6 @@ sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
 void
 sim_reg_stats(struct stat_sdb_t *sdb)
 {
-  if (opt_load == 1)
-  {
-    stat_reg_counter(sdb, "counter_loads",
-        "total number of loads executed",
-        &counter_loads, 0, NULL);
-  }
-  else
-  {
-    stat_reg_counter(sdb, "counter_stores",
-        "total number of stores executed",
-        &counter_stores, 0, NULL);
-
-  }
   stat_reg_counter(sdb, "sim_num_insn",
 		   "total number of instructions executed",
 		   &sim_num_insn, sim_num_insn, NULL);
@@ -345,18 +304,16 @@ sim_reg_stats(struct stat_sdb_t *sdb)
 		   "total number of loads and stores executed",
 		   &sim_num_refs, 0, NULL);
 
-  stat_reg_counter(sdb, "predicted_loads",
-		   "total number of predicted loads",
-		   &predicted_loads_cnt, 0, NULL);
+   stat_reg_counter(sdb, "sim_num_refs",
+		   "total number of loads and stores executed",
+		   &contor_loads, 0, NULL);
+    stat_reg_counter(sdb, "sim_num_refs",
+		   "total number of loads and stores executed",
+		   &contor_stores, 0, NULL);
 
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
-
-  // stat_reg_formula(sdb, "degree_of_locality",
-	// 	   "degree of locality (number of predicted values / number of dynamic loads)",
-	// 	   "counter_loads / predicted_loads", NULL);
-
   stat_reg_formula(sdb, "sim_inst_rate",
 		   "simulation speed (in insts/sec)",
 		   "sim_num_insn / sim_elapsed_time", NULL);
@@ -371,6 +328,7 @@ sim_reg_stats(struct stat_sdb_t *sdb)
   /* register predictor stats */
   if (pred)
     bpred_reg_stats(pred, sdb);
+    
 }
 
 /* initialize the simulator */
@@ -531,11 +489,6 @@ sim_main(void)
   int stack_idx;
   enum md_fault_type fault;
 
-  /** new input params:
-   * - statistics
-   * - input code
-  */
-
   fprintf(stderr, "sim: ** starting functional simulation w/ predictors **\n");
 
   /* set up initial default next PC */
@@ -569,6 +522,11 @@ sim_main(void)
       /* decode the instruction */
       MD_SET_OPCODE(op, inst);
 
+      if(MD_OP_FLAG(op) & F_LOAD)
+        contor_loads++;
+      if(MD_OP_FLAG(op) & F_STORE)
+        contor_stores++;
+
       /* execute the instruction */
       switch (op)
 	{
@@ -585,37 +543,6 @@ sim_main(void)
 #include "machine.def"
 	default:
 	  panic("attempted to execute a bogus opcode");
-      }
-
-      if (MD_OP_FLAGS(op) & F_LOAD) {
-        counter_loads++;
-        // LVPT logic: call functions for load value prediction
-        // Example: use regs.regs_PC as instruction address, and GPR(RT) as value
-        md_addr_t load_addr = regs.regs_PC;
-        sword_t load_value = GPR(RT);
-        int history = 0; // Set history as needed for your implementation
-
-        // Check if address is in LVPT
-        int found = foundAssociativeLVPTAddress(load_addr, load_value, history);
-        insertLVPTValue(lvpt, load_value, history);
-        if(predictValue(lvpt, history) != 0)
-        {
-          predicted_loads_cnt++;
-        }
-      }
-      if (MD_OP_FLAGS(op) & F_STORE)
-        counter_stores++;
-
-      if(prime_num_counter < opt_history)
-      {
-
-        bool_t is_prime = IsPrime(current_prime_num);
-        if(is_prime)
-          {
-            printf("Nr prim: %d\n",current_prime_num);
-            prime_num_counter++;
-          }
-        current_prime_num++;
       }
 
       if (fault != md_fault_none)
