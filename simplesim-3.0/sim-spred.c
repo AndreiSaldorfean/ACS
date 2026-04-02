@@ -84,7 +84,6 @@
 #include "stats.h"
 #include "syscall.h"
 #include <stdbool.h>
-
 /////////////////
 /*
  * This file implements a branch predictor analyzer.
@@ -927,7 +926,61 @@ void sim_aux_config(FILE *stream) /* output stream */
 /* dump simulator-specific auxiliary simulator statistics */
 void sim_aux_stats(FILE *stream) /* output stream */
 {
-    /* nada */
+    if (isAssoc)
+        Factor_Complexitate_Arhitectura = 2;
+    else
+        Factor_Complexitate_Arhitectura = 1;
+
+    fprintf(stream, "Factor Complexitate Arhitectura %d \n",
+            Factor_Complexitate_Arhitectura);
+
+    npenload = sim_num_loads * Tacces_DRAM;
+    fprintf(stream, "npenload %d \n", npenload);
+    T1 = (sim_num_insn - sim_num_loads) * 1 + npenload;
+    fprintf(stream, "T1 %d \n", T1);
+
+    if (contextual == 0)
+        Tacces_predictor = Factor_Complexitate_Arhitectura * 2;
+    else if (contextual == 1)
+        Tacces_predictor = Factor_Complexitate_Arhitectura * 5;
+    else
+        Tacces_predictor = Factor_Complexitate_Arhitectura * 7;
+
+    fprintf(stream, "Contextual %d \n", contextual);
+    fprintf(stream, "Tacces_predictor %d \n", Tacces_predictor);
+
+    npenload = 0;
+    notfoundA = sim_num_loads - (classifiedPred + classifiedUnpred);
+    fprintf(stream, "notfoundA %d \n", notfoundA);
+
+    foundA = valuePrediction;
+    fprintf(stream, "foundA %d \n", foundA);
+
+    foundA_miss = classifiedPred - valuePrediction + classifiedUnpred;
+    fprintf(stream, "classifiedPred %d \n", classifiedPred);
+    fprintf(stream, "valuePrediction %d \n", valuePrediction);
+    fprintf(stream, "classifiedUnpred %d \n", classifiedUnpred);
+    fprintf(stream, "foundAMiss %d \n", foundA_miss);
+
+    if (notfoundA != 0)
+        npenload += notfoundA * Tacces_DRAM;
+    if (foundA != 0)
+        npenload += foundA * Tacces_predictor;
+    if (foundA_miss != 0)
+        npenload += foundA_miss * Tacces_DRAM;
+
+    fprintf(stream, "npenload %d \n", npenload);
+
+    T2 = (sim_num_insn - sim_num_loads) * 1 + npenload;
+    fprintf(stream, "sim_num_insn  %d \n", sim_num_insn);
+    fprintf(stream, "sim_num_loads %d \n", sim_num_loads);
+    fprintf(stream, "T2 %d \n", T2);
+
+    if (T2 != 0)
+    {
+        S = 1.00f * (T1 - T2) / T2 * 100;
+        fprintf(stream, "Speedup %f \n", S);
+    }
 }
 
 /* un-initialize simulator-specific state */
@@ -946,6 +999,76 @@ void sim_uninit(void)
 /* check simulator-specific option values */
 void sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
 {
+}
+
+static void process_load(enum md_opcode op, int out1, md_addr_t addr)
+{
+    if (MD_OP_FLAGS(op) & F_LOAD)
+    {
+        sim_num_loads++;
+        if (predict) /* load value prediction */
+        {
+            if (isAssoc)
+            {
+                if (memAddress)
+                {
+                    if (!foundAssociativeLVPTAddress(
+                            addr,
+                            regs.regs_R[out1],
+                            history))
+                    {
+                        lvpt = pushLVPTAddress(lvpt, addr);
+                        insertLVPTValue(lvpt, regs.regs_R[out1], history);
+                    }
+                }
+                else
+                {
+                    if (!foundAssociativeLVPTAddress(
+                            regs.regs_PC,
+                            regs.regs_R[out1],
+                            history))
+                    {
+                        lvpt = pushLVPTAddress(lvpt, regs.regs_PC);
+                        insertLVPTValue(lvpt, regs.regs_R[out1], history);
+                    }
+                }
+            }
+            else
+            {
+                if (memAddress)
+                    insertIntoDirrectMappedLVPT(
+                        addr,
+                        regs.regs_R[out1],
+                        history);
+                else
+                    insertIntoDirrectMappedLVPT(
+                        regs.regs_PC,
+                        regs.regs_R[out1],
+                        history);
+            }
+        }
+        else /* load value locality verification */
+        {
+            if (memAddress)
+            {
+                if (l == NULL)
+                    l = pushAddress(l, addr, regs.regs_R[out1]);
+                else if (!foundAddress(l, addr, regs.regs_R[out1], history))
+                    l = pushAddress(l, addr, regs.regs_R[out1]);
+            }
+            else
+            {
+                if (l == NULL)
+                    l = pushAddress(l, regs.regs_PC, regs.regs_R[out1]);
+                else if (!foundAddress(
+                             l,
+                             regs.regs_PC,
+                             regs.regs_R[out1],
+                             history))
+                    l = pushAddress(l, regs.regs_PC, regs.regs_R[out1]);
+            }
+        }
+    }
 }
 
 /* start simulation, program loaded, processor precise state initialized */
@@ -971,6 +1094,9 @@ void sim_main(void)
         history = 1;
     /////////////////////////////////////////////////////
 
+    /* set up initial default next PC */
+    regs.regs_NPC = regs.regs_PC + sizeof(md_inst_t);
+
     while (TRUE)
     {
         /* maintain $r0 semantics */
@@ -983,8 +1109,6 @@ void sim_main(void)
         MD_FETCH_INST(inst, mem, regs.regs_PC);
 
         /* keep an instruction count */
-        printf("sim_num_insn= %d\n", sim_num_insn);
-        printf("max_insts= %d\n", max_insts);
         sim_num_insn++;
 
         /* set default reference address and access mode */
@@ -1034,153 +1158,87 @@ void sim_main(void)
         }
         //////////////////////////////////////////////////////////////
         /* keep a load instruction count */
-        if (MD_OP_FLAGS(op) & F_LOAD)
-        {
-            sim_num_loads++;
-            if (predict) /* load value prediction */
-            {
-                if (isAssoc)
-                {
-                    if (memAddress)
-                    {
-                        if (!foundAssociativeLVPTAddress(
-                                addr,
-                                regs.regs_R[out1],
-                                history))
-                        {
-                            lvpt = pushLVPTAddress(lvpt, addr);
-                            insertLVPTValue(lvpt, regs.regs_R[out1], history);
-                        }
-                    }
-                    else
-                    {
-                        if (!foundAssociativeLVPTAddress(
-                                regs.regs_PC,
-                                regs.regs_R[out1],
-                                history))
-                        {
-                            lvpt = pushLVPTAddress(lvpt, regs.regs_PC);
-                            insertLVPTValue(lvpt, regs.regs_R[out1], history);
-                        }
-                    }
-                }
-                else
-                {
-                    if (memAddress)
-                        insertIntoDirrectMappedLVPT(
-                            addr,
-                            regs.regs_R[out1],
-                            history);
-                    else
-                        insertIntoDirrectMappedLVPT(
-                            regs.regs_PC,
-                            regs.regs_R[out1],
-                            history);
-                }
-            }
-            else /* load value locality verification */
-            {
-                if (memAddress)
-                {
-                    if (l == NULL)
-                        l = pushAddress(l, addr, regs.regs_R[out1]);
-                    else if (!foundAddress(l, addr, regs.regs_R[out1], history))
-                        l = pushAddress(l, addr, regs.regs_R[out1]);
-                }
-                else
-                {
-                    if (l == NULL)
-                        l = pushAddress(l, regs.regs_PC, regs.regs_R[out1]);
-                    else if (!foundAddress(
-                                 l,
-                                 regs.regs_PC,
-                                 regs.regs_R[out1],
-                                 history))
-                        l = pushAddress(l, regs.regs_PC, regs.regs_R[out1]);
-                }
-            }
-        }
-
+        process_load(op, out1, addr);
         ////////////////////////////////////////////////////////////
 
         if (MD_OP_FLAGS(op) & F_CTRL)
         {
             md_addr_t pred_PC;
             // struct bpred_update_t update_rec;
-
-            /* finish early? */
-            if (max_insts && sim_num_insn >= max_insts)
-            {
-                if (isAssoc)
-                    Factor_Complexitate_Arhitectura = 2;
-                else
-                    Factor_Complexitate_Arhitectura = 1;
-
-                //////////////////////////////////////////////////////////
-                // if(!vspeedup)
-                //{
-
-                printf(
-                    "Factor Complexitate Arhitectura %d \n",
-                    Factor_Complexitate_Arhitectura);
-
-                npenload = sim_num_loads * Tacces_DRAM;
-                printf("npenload %d \n", npenload);
-                T1 = (sim_num_insn - sim_num_loads) * 1 + npenload;
-                printf("T1 %d \n", T1);
-                //}
-                // else
-                //{
-
-                if (contextual == 0)
-                    Tacces_predictor = Factor_Complexitate_Arhitectura * 2;
-                else if (contextual == 1)
-                    Tacces_predictor = Factor_Complexitate_Arhitectura * 5;
-                else
-                    Tacces_predictor = Factor_Complexitate_Arhitectura * 7;
-
-                printf("Contextual %d \n", contextual);
-                printf("Tacces_predictor %d \n", Tacces_predictor);
-
-                npenload = 0;
-                notfoundA = sim_num_loads - (classifiedPred + classifiedUnpred);
-
-                printf("notfoundA %d \n", notfoundA);
-
-                foundA = valuePrediction;
-                printf("foundA %d \n", foundA);
-
-                foundA_miss =
-                    classifiedPred - valuePrediction + classifiedUnpred;
-                printf("classifiedPred %d \n", classifiedPred);
-                printf("valuePrediction %d \n", valuePrediction);
-                printf("classifiedUnpred %d \n", classifiedUnpred);
-                printf("foundAMiss %d \n", foundA_miss);
-
-                if (notfoundA != 0)
-                    npenload = npenload + notfoundA * Tacces_DRAM;
-
-                if (foundA != 0)
-                    npenload = npenload + foundA * Tacces_predictor;
-
-                if (foundA_miss != 0)
-                    npenload = npenload + foundA_miss * Tacces_DRAM;
-
-                printf("npenload %d \n", npenload);
-
-                T2 = (sim_num_insn - sim_num_loads) * 1 + npenload;
-
-                printf("sim_num_insn  %d \n", sim_num_insn);
-                printf("sim_num_loads %d \n", sim_num_loads);
-                printf("T2 %d \n", T2);
-
-                //}
-
-                S = 1.00 * (T1 - T2) / T2 * 100;
-                printf("T2 %f \n", S);
-                return;
-            }
             //////////////////////////////////////////////////////
+        }
+
+        /* finish early? */
+        if (max_insts && sim_num_insn >= max_insts)
+        {
+            if (isAssoc)
+                Factor_Complexitate_Arhitectura = 2;
+            else
+                Factor_Complexitate_Arhitectura = 1;
+
+            //////////////////////////////////////////////////////////
+            // if(!vspeedup)
+            //{
+
+            printf(
+                "Factor Complexitate Arhitectura %d \n",
+                Factor_Complexitate_Arhitectura);
+
+            npenload = sim_num_loads * Tacces_DRAM;
+            printf("npenload %d \n", npenload);
+            T1 = (sim_num_insn - sim_num_loads) * 1 + npenload;
+            printf("T1 %d \n", T1);
+            //}
+            // else
+            //{
+
+            if (contextual == 0)
+                Tacces_predictor = Factor_Complexitate_Arhitectura * 2;
+            else if (contextual == 1)
+                Tacces_predictor = Factor_Complexitate_Arhitectura * 5;
+            else
+                Tacces_predictor = Factor_Complexitate_Arhitectura * 7;
+
+            printf("Contextual %d \n", contextual);
+            printf("Tacces_predictor %d \n", Tacces_predictor);
+
+            npenload = 0;
+            notfoundA = sim_num_loads - (classifiedPred + classifiedUnpred);
+
+            printf("notfoundA %d \n", notfoundA);
+
+            foundA = valuePrediction;
+            printf("foundA %d \n", foundA);
+
+            foundA_miss =
+                classifiedPred - valuePrediction + classifiedUnpred;
+            printf("classifiedPred %d \n", classifiedPred);
+            printf("valuePrediction %d \n", valuePrediction);
+            printf("classifiedUnpred %d \n", classifiedUnpred);
+            printf("foundAMiss %d \n", foundA_miss);
+
+            if (notfoundA != 0)
+                npenload = npenload + notfoundA * Tacces_DRAM;
+
+            if (foundA != 0)
+                npenload = npenload + foundA * Tacces_predictor;
+
+            if (foundA_miss != 0)
+                npenload = npenload + foundA_miss * Tacces_DRAM;
+
+            printf("npenload %d \n", npenload);
+
+            T2 = (sim_num_insn - sim_num_loads) * 1 + npenload;
+
+            printf("sim_num_insn  %d \n", sim_num_insn);
+            printf("sim_num_loads %d \n", sim_num_loads);
+            printf("T2 %d \n", T2);
+
+            //}
+
+            S = 1.00 * (T1 - T2) / T2 * 100;
+            printf("T2 %f \n", S);
+            return;
         }
     }
 }
