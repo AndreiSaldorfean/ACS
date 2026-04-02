@@ -221,7 +221,7 @@
 
 /* no operation */
 #define NOP_IMPL							\
-  {									\
+  {									        \
     /* nada... */							\
   }
 DEFINST(NOP,		0x00,

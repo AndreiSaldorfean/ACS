@@ -119,23 +119,24 @@
  */
 
 /* ================================================ INCLUDES =============================================== */
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
 
 #include "host.h"
-#include "misc.h"
 #include "machine.h"
+#include "misc.h"
 #include "spred.h"
 
 /* ================================================= MACROS ================================================ */
 /* turn this on to enable the SimpleScalar 2.0 RAS bug */
 /* #define RAS_BUG_COMPATIBLE */
 
-#define BIMOD_HASH(PRED, ADDR)						\
-  ((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) & ((PRED)->config.bimod.size-1))
-    /* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
+#define BIMOD_HASH(PRED, ADDR)                                                 \
+    ((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) &                              \
+     ((PRED)->config.bimod.size - 1))
+/* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
 
 /* ============================================ LOCAL VARIABLES ============================================ */
 /* counter for load value locality */
@@ -147,85 +148,85 @@ static counter_t loadValueLocality = 0;
 /* ================================================ MODULE API ============================================= */
 addrList news()
 {
-  return NULL;
+    return NULL;
 }
 
 addrList pushAddress(addrList p, md_addr_t addr, sword_t value)
 {
-  addrList q;
-  valueList r;
-  q=(addrList)malloc(sizeof(struct location));
-  q->addr=addr;
-  q->nextAddress=p;
-  r=(valueList)malloc(sizeof(struct element));
-  r->value=value;
-  r->nextValue = NULL;
-  q->values = r;
-  return q;
+    addrList q;
+    valueList r;
+    q = (addrList)malloc(sizeof(struct location));
+    q->addr = addr;
+    q->nextAddress = p;
+    r = (valueList)malloc(sizeof(struct element));
+    r->value = value;
+    r->nextValue = NULL;
+    q->values = r;
+    return q;
 }
 
 void pushValue(addrList p, sword_t value)
 {
-  valueList q;
-  q=(valueList)malloc(sizeof(struct element));
-  q->value=value;
-  q->nextValue=p->values;
-  p->values=q;
+    valueList q;
+    q = (valueList)malloc(sizeof(struct element));
+    q->value = value;
+    q->nextValue = p->values;
+    p->values = q;
 }
 
 int foundValue(addrList l, sword_t value, int history)
 {
-  int found = 0;
-  int i;
-  valueList q = l->values;
-  valueList p = q->nextValue;
-  if(q->value == value)
-  {
-	  found = 1;
-	  loadValueLocality ++;
-  }
-  else
-    for(i=1; i<history; i++)
-	{
-	  if(p == NULL) break;
-	  if(p->value == value)
-	  {
-	    found = 1;
-	    loadValueLocality ++;
-		// the value is moved to the first position in the list
-		q->nextValue = p->nextValue;
-		p->nextValue = l->values;
-		l->values = p;
-		break;
-	  }
-	  if(i == history-1)
-	  {
-	    q->nextValue = NULL;
-	    free(p);
-	  }
-	  p=p->nextValue;
-	  q=q->nextValue;
-	}
-  return found;
+    int found = 0;
+    int i;
+    valueList q = l->values;
+    valueList p = q->nextValue;
+    if (q->value == value)
+    {
+        found = 1;
+        loadValueLocality++;
+    }
+    else
+        for (i = 1; i < history; i++)
+        {
+            if (p == NULL)
+                break;
+            if (p->value == value)
+            {
+                found = 1;
+                loadValueLocality++;
+                // the value is moved to the first position in the list
+                q->nextValue = p->nextValue;
+                p->nextValue = l->values;
+                l->values = p;
+                break;
+            }
+            if (i == history - 1)
+            {
+                q->nextValue = NULL;
+                free(p);
+            }
+            p = p->nextValue;
+            q = q->nextValue;
+        }
+    return found;
 }
 
 int foundAddress(addrList l, md_addr_t addr, sword_t value, int history)
 {
-
-  addrList p = l;
-  int found = 0;
-  while(p!=NULL)
-  {
-	if(p->addr == addr)
-	{
-	  found = 1;
-	  if(!foundValue(p, value, history))
-		pushValue(p, value);
-	  break;
-	}
-    p=p->nextAddress;
-  }
-  return found;
+    addrList p = l;
+    int found = 0;
+    while (p != NULL)
+    {
+        if (p->addr == addr)
+        {
+            found = 1;
+            if (!foundValue(p, value, history))
+                pushValue(p, value);
+            break;
+        }
+        p = p->nextAddress;
+    }
+    return found;
 }
 
 // /* create a branch predictor */

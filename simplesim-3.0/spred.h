@@ -121,37 +121,40 @@
 #define SPRED_H
 
 /* ================================================ INCLUDES =============================================== */
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
 
 #include "host.h"
-#include "misc.h"
 #include "machine.h"
+#include "misc.h"
 
 /* ================================================= MACROS ================================================ */
 /* turn this on to enable the SimpleScalar 2.0 RAS bug */
 /* #define RAS_BUG_COMPATIBLE */
 
-#define BIMOD_HASH(PRED, ADDR)						\
-  ((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) & ((PRED)->config.bimod.size-1))
-    /* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
+#define BIMOD_HASH(PRED, ADDR)                                                 \
+    ((((ADDR) >> 19) ^ ((ADDR) >> MD_BR_SHIFT)) &                              \
+     ((PRED)->config.bimod.size - 1))
+/* was: ((baddr >> 16) ^ baddr) & (pred->dirpred.bimod.size-1) */
 
 /* ======================================= TYPEDEFS, ENUMS, STRUCTS ======================================== */
 typedef struct element *valueList;
+
 struct element
 {
-  sword_t value;
-  valueList nextValue;
+    sword_t value;
+    valueList nextValue;
 };
 
 typedef struct location *addrList;
+
 struct location
 {
-  md_addr_t addr;
-  addrList nextAddress;
-  valueList values;
+    md_addr_t addr;
+    addrList nextAddress;
+    valueList values;
 };
 
 /* ============================================ INLINE FUNCTIONS =========================================== */
@@ -267,6 +270,5 @@ int foundAddress(addrList l, md_addr_t addr, sword_t value, int history);
 // 	     int correct,		/* was earlier addr prediction ok? */
 // 	     enum md_opcode op,		/* opcode of instruction */
 // 	     struct bpred_update_t *dir_update_ptr);/* pred state pointer */
-
 
 #endif SPRED_H
