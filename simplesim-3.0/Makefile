@@ -379,7 +379,7 @@ OBJS =	main.$(OEXT) syscall.$(OEXT) memory.$(OEXT) regs.$(OEXT) \
 PROGS = sim-fast$(EEXT) sim-safe$(EEXT) sim-eio$(EEXT) \
 	sim-bpred$(EEXT) sim-LVPred$(EEXT) sim-profile$(EEXT) \
 	sim-cheetah$(EEXT) sim-cache$(EEXT) sim-outorder$(EEXT) \
-	sim-LVPred$(EEXT)
+	sim-LVPred$(EEXT) \
 	sim-spred$(EEXT)
 
 #
