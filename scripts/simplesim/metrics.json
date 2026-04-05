@@ -1,5 +1,3 @@
 {
-    "cache": ["1 - $(il1.miss_rate)", "1 - $(dl1.miss_rate)"],
-    "bpred": ["$(bpred_addr_rate)"],
     "spred": ["$(lvptPredictionAccuracy)", "$(speedUp)"]
 }
