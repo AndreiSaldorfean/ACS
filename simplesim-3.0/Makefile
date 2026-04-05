@@ -143,7 +143,7 @@ LNDIR = ln -s
 DIFF = diff
 OEXT = o
 LEXT = a
-EEXT = .elf
+EEXT =
 CS = ;
 X=/
 

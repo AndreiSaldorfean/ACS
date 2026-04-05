@@ -27,6 +27,12 @@
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
                 }
             ],
+            "spred": [
+                {
+                    "predAssoc0": "-pred 1 -assoc 0 -lvpt 256",
+                    "predAssoc1": "-pred 1 -assoc 1 -lvpt 256"
+                }
+            ],
             "bpred": [
                 {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
@@ -87,6 +93,12 @@
                 "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
                 "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "spred": [
+                {
+                    "predAssoc0": "-pred 1 -assoc 0 -lvpt 256",
+                    "predAssoc1": "-pred 1 -assoc 1 -lvpt 256"
                 }
             ],
             "bpred": [
@@ -151,6 +163,12 @@
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
                 }
             ],
+            "spred": [
+                {
+                    "predAssoc0": "-pred 1 -assoc 0 -lvpt 256",
+                    "predAssoc1": "-pred 1 -assoc 1 -lvpt 256"
+                }
+            ],
             "bpred": [
                 {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
@@ -213,6 +231,12 @@
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
                 }
             ],
+            "spred": [
+                {
+                    "predAssoc0": "-pred 1 -assoc 0 -lvpt 256",
+                    "predAssoc1": "-pred 1 -assoc 1 -lvpt 256"
+                }
+            ],
             "bpred": [
                 {
                 "cfg0": "-bpred 2lev -bpred:2lev 1 256 8 0",
@@ -273,6 +297,12 @@
                 "dcache_evac_l": "-cache:dl1 il1:256:64:1:l",
                 "dcache_evac_r": "-cache:dl1 il1:256:64:1:r",
                 "dcache_evac_f": "-cache:dl1 il1:256:64:1:f"
+                }
+            ],
+            "spred": [
+                {
+                    "predAssoc0": "-pred 1 -assoc 0 -lvpt 256",
+                    "predAssoc1": "-pred 1 -assoc 1 -lvpt 256"
                 }
             ],
             "bpred": [
