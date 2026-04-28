@@ -80,7 +80,7 @@
  * To convert from 0.8um to 0.5um, make FUDGEFACTOR = 1.6
  */
  
-#define FUDGEFACTOR 1.0
+#define FUDGEFACTOR 10.0
 
 
 /*===================================================================*/

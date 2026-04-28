@@ -75,10 +75,10 @@ double logfour(x)
 }
 
 /* safer pop count to validate the fast algorithm */
-int pop_count_slow(quad_t bits)
+int pop_count_slow(qword_t bits)
 {
   int count = 0; 
-  quad_t tmpbits = bits; 
+  qword_t tmpbits = bits; 
   while (tmpbits) { 
     if (tmpbits & 1) ++count; 
     tmpbits >>= 1; 
@@ -87,14 +87,14 @@ int pop_count_slow(quad_t bits)
 }
 
 /* fast pop count */
-int pop_count(quad_t bits)
+int pop_count(qword_t bits)
 {
 #define T unsigned long long
 #define ONES ((T)(-1)) 
 #define TWO(k) ((T)1 << (k)) 
 #define CYCL(k) (ONES/(1 + (TWO(TWO(k))))) 
 #define BSUM(x,k) ((x)+=(x) >> TWO(k), (x) &= CYCL(k)) 
-  quad_t x = bits; 
+  qword_t x = bits; 
   x = (x & CYCL(0)) + ((x>>TWO(0)) & CYCL(0)); 
   x = (x & CYCL(1)) + ((x>>TWO(1)) & CYCL(1)); 
   BSUM(x,2); 
@@ -124,6 +124,10 @@ int nvreg_width;
 int npreg_width;
 
 extern int bimod_config[];
+
+/* added by A. Gellert for the Reuse Buffer (RB) and LVPT */
+extern int RB_size;
+extern int LVPT_size;
 
 extern struct cache_t *cache_dl1;
 extern struct cache_t *cache_il1;
@@ -159,6 +163,10 @@ static double falu_power=0;
 static double resultbus_power=0;
 static double clock_power=0;
 
+/* added by A. Gellert for the Reuse Buffer (RB) and LVPT */
+static double rb_power=0;
+static double lvpt_power=0;
+
 static double rename_power_cc1=0;
 static double bpred_power_cc1=0;
 static double window_power_cc1=0;
@@ -170,6 +178,10 @@ static double dcache2_power_cc1=0;
 static double alu_power_cc1=0;
 static double resultbus_power_cc1=0;
 static double clock_power_cc1=0;
+
+/* added by A. Gellert for the Reuse Buffer (RB) and LVPT */
+static double rb_power_cc1=0;
+static double lvpt_power_cc1=0;
 
 static double rename_power_cc2=0;
 static double bpred_power_cc2=0;
@@ -183,6 +195,10 @@ static double alu_power_cc2=0;
 static double resultbus_power_cc2=0;
 static double clock_power_cc2=0;
 
+/* added by A. Gellert for the Reuse Buffer (RB) and LVPT */
+static double rb_power_cc2=0;
+static double lvpt_power_cc2=0;
+
 static double rename_power_cc3=0;
 static double bpred_power_cc3=0;
 static double window_power_cc3=0;
@@ -194,6 +210,10 @@ static double dcache2_power_cc3=0;
 static double alu_power_cc3=0;
 static double resultbus_power_cc3=0;
 static double clock_power_cc3=0;
+
+/* added by A. Gellert for the Reuse Buffer (RB) and LVPT */
+static double rb_power_cc3=0;
+static double lvpt_power_cc3=0;
 
 static double total_cycle_power;
 static double total_cycle_power_cc1;
@@ -263,6 +283,14 @@ static counter_t max_dcache2_access;
 static counter_t max_alu_access;
 static counter_t max_resultbus_access;
 
+/* Added by A. Gellert */
+extern counter_t rb_access;
+static counter_t total_rb_access=0;
+static counter_t max_rb_access;
+extern counter_t lvpt_access;
+static counter_t total_lvpt_access=0;
+static counter_t max_lvpt_access;
+
 void clear_access_stats()
 {
   rename_access=0;
@@ -294,6 +322,10 @@ void clear_access_stats()
   regfile_num_pop_count_cycle=0;
   resultbus_total_pop_count_cycle=0;
   resultbus_num_pop_count_cycle=0;
+
+  /* added by A. Gellert */
+  rb_access=0;
+  lvpt_access=0;
 }
 
 /* compute bitline activity factors which we use to scale bitline power 
@@ -351,6 +383,10 @@ void update_power_stats()
   resultbus_power+=power.resultbus;
   clock_power+=power.clock_power;
 
+  /* Added by A. Gellert */
+  rb_power+=power.rb_power;
+  lvpt_power+=power.lvpt_power;
+
   total_rename_access+=rename_access;
   total_bpred_access+=bpred_access;
   total_window_access+=window_access;
@@ -362,6 +398,10 @@ void update_power_stats()
   total_alu_access+=alu_access;
   total_resultbus_access+=resultbus_access;
 
+  /* Added by A. Gellert */
+  total_rb_access+=rb_access;
+  total_lvpt_access+=lvpt_access;
+
   max_rename_access=MAX(rename_access,max_rename_access);
   max_bpred_access=MAX(bpred_access,max_bpred_access);
   max_window_access=MAX(window_access,max_window_access);
@@ -372,6 +412,10 @@ void update_power_stats()
   max_dcache2_access=MAX(dcache2_access,max_dcache2_access);
   max_alu_access=MAX(alu_access,max_alu_access);
   max_resultbus_access=MAX(resultbus_access,max_resultbus_access);
+
+  /* Added by A. Gellert */
+  max_rb_access=MAX(rb_access,max_rb_access);
+  max_lvpt_access=MAX(lvpt_access, max_lvpt_access);
       
   if(rename_access) {
     rename_power_cc1+=power.rename_power;
@@ -391,6 +435,30 @@ void update_power_stats()
   }
   else
     bpred_power_cc3+=turnoff_factor*power.bpred_power;
+
+  /* Added by A. Gellert for the Reuse Buffer (RB) updated in the commit stage */
+  if(rb_access) {
+    if(rb_access <= (3.0*commit_width))
+	rb_power_cc1+=power.rb_power;
+    else
+	rb_power_cc1+=((double)rb_access/(3.0*(double)commit_width)) * power.rb_power;
+    rb_power_cc2+=((double)rb_access/(3.0*(double)commit_width)) * power.rb_power;
+    rb_power_cc3+=((double)rb_access/(3.0*(double)commit_width)) * power.rb_power;
+  }
+  else
+    rb_power_cc3+=turnoff_factor*power.rb_power;
+
+  /* Added by A. Gellert for the LVPT updated in the "commit" stage */
+  if(lvpt_access) {
+    if(lvpt_access <= (3.0*commit_width))
+	lvpt_power_cc1+=power.lvpt_power;
+    else
+	lvpt_power_cc1+=((double)lvpt_access/(3.0*(double)commit_width)) * power.lvpt_power;
+    lvpt_power_cc2+=((double)lvpt_access/(3.0*(double)commit_width)) * power.lvpt_power;
+    lvpt_power_cc3+=((double)lvpt_access/(3.0*(double)commit_width)) * power.lvpt_power;
+  }
+  else
+    lvpt_power_cc3+=turnoff_factor*power.lvpt_power;
 
 #ifdef STATIC_AF
   if(window_preg_access) {
@@ -581,21 +649,21 @@ void update_power_stats()
     resultbus_power_cc3+=turnoff_factor*power.resultbus;
 #endif
 
-  total_cycle_power = rename_power + bpred_power + window_power + 
+  total_cycle_power = rename_power + bpred_power + rb_power + lvpt_power + window_power + 
     lsq_power + regfile_power + icache_power + dcache_power +
     alu_power + resultbus_power;
 
-  total_cycle_power_cc1 = rename_power_cc1 + bpred_power_cc1 + 
+  total_cycle_power_cc1 = rename_power_cc1 + bpred_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + 
     window_power_cc1 + lsq_power_cc1 + regfile_power_cc1 + 
     icache_power_cc1 + dcache_power_cc1 + alu_power_cc1 + 
     resultbus_power_cc1;
 
-  total_cycle_power_cc2 = rename_power_cc2 + bpred_power_cc2 + 
+  total_cycle_power_cc2 = rename_power_cc2 + bpred_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + 
     window_power_cc2 + lsq_power_cc2 + regfile_power_cc2 + 
     icache_power_cc2 + dcache_power_cc2 + alu_power_cc2 + 
     resultbus_power_cc2;
 
-  total_cycle_power_cc3 = rename_power_cc3 + bpred_power_cc3 + 
+  total_cycle_power_cc3 = rename_power_cc3 + bpred_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + 
     window_power_cc3 + lsq_power_cc3 + regfile_power_cc3 + 
     icache_power_cc3 + dcache_power_cc3 + alu_power_cc3 + 
     resultbus_power_cc3;
@@ -632,6 +700,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_double(sdb, "bpred_power", "total power usage of bpred unit", &bpred_power, 0, NULL);
 
+  /* Added by A. Gellert */
+  stat_reg_double(sdb, "rb_power", "total power usage of RB unit", &rb_power, 0, NULL);
+  stat_reg_double(sdb, "lvpt_power", "total power usage of LVPT unit", &lvpt_power, 0, NULL);
+
   stat_reg_double(sdb, "window_power", "total power usage of instruction window", &window_power, 0, NULL);
 
   stat_reg_double(sdb, "lsq_power", "total power usage of load/store queue", &lsq_power, 0, NULL);
@@ -655,6 +727,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
   stat_reg_formula(sdb, "avg_rename_power", "avg power usage of rename unit", "rename_power/sim_cycle", NULL);
 
   stat_reg_formula(sdb, "avg_bpred_power", "avg power usage of bpred unit", "bpred_power/sim_cycle", NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_formula(sdb, "avg_rb_power", "avg power usage of RB unit", "rb_power/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_lvpt_power", "avg power usage of LVPT unit", "lvpt_power/sim_cycle", NULL);
 
   stat_reg_formula(sdb, "avg_window_power", "avg power usage of instruction window", "window_power/sim_cycle",  NULL);
 
@@ -680,27 +756,31 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "dispatch_stage_power", "total power usage of dispatch stage", "rename_power", NULL);
 
-  stat_reg_formula(sdb, "issue_stage_power", "total power usage of issue stage", "resultbus_power + alu_power + dcache_power + dcache2_power + window_power + lsq_power", NULL);
+  stat_reg_formula(sdb, "issue_stage_power", "total power usage of issue stage", "resultbus_power + rb_power + lvpt_power + alu_power + dcache_power + dcache2_power + window_power + lsq_power", NULL);
 
   stat_reg_formula(sdb, "avg_fetch_power", "average power of fetch unit per cycle", "(icache_power + bpred_power)/ sim_cycle", /* format */NULL);
 
   stat_reg_formula(sdb, "avg_dispatch_power", "average power of dispatch unit per cycle", "(rename_power)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "avg_issue_power", "average power of issue unit per cycle", "(resultbus_power + alu_power + dcache_power + dcache2_power + window_power + lsq_power)/ sim_cycle", /* format */NULL);
+  stat_reg_formula(sdb, "avg_issue_power", "average power of issue unit per cycle", "(resultbus_power + rb_power + lvpt_power + alu_power + dcache_power + dcache2_power + window_power + lsq_power)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "total_power", "total power per cycle","(rename_power + bpred_power + window_power + lsq_power + regfile_power + icache_power  + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)", NULL);
+  stat_reg_formula(sdb, "total_power", "total power per cycle","(rename_power + bpred_power + rb_power + lvpt_power + window_power + lsq_power + regfile_power + icache_power  + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_cycle", "average total power per cycle","(rename_power + bpred_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_total_power_cycle", "average total power per cycle","(rename_power + bpred_power + rb_power + lvpt_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)/sim_cycle", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_cycle_nofp_nod2", "average total power per cycle","(rename_power + bpred_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power - falu_power )/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_total_power_cycle_nofp_nod2", "average total power per cycle","(rename_power + bpred_power + rb_power + lvpt_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power - falu_power )/sim_cycle", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_insn", "average total power per insn","(rename_power + bpred_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)/sim_total_insn", NULL);
+  stat_reg_formula(sdb, "avg_total_power_insn", "average total power per insn","(rename_power + bpred_power + rb_power + lvpt_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power + dcache2_power)/sim_total_insn", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_insn_nofp_nod2", "average total power per insn","(rename_power + bpred_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power - falu_power )/sim_total_insn", NULL);
+  stat_reg_formula(sdb, "avg_total_power_insn_nofp_nod2", "average total power per insn","(rename_power + bpred_power + rb_power + lvpt_power + window_power + lsq_power + regfile_power + icache_power + resultbus_power + clock_power + alu_power + dcache_power - falu_power )/sim_total_insn", NULL);
 
   stat_reg_double(sdb, "rename_power_cc1", "total power usage of rename unit_cc1", &rename_power_cc1, 0, NULL);
 
   stat_reg_double(sdb, "bpred_power_cc1", "total power usage of bpred unit_cc1", &bpred_power_cc1, 0, NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_double(sdb, "rb_power_cc1", "total power usage of RB unit_cc1", &rb_power_cc1, 0, NULL);
+  stat_reg_double(sdb, "lvpt_power_cc1", "total power usage of LVPT unit_cc1", &lvpt_power_cc1, 0, NULL);
 
   stat_reg_double(sdb, "window_power_cc1", "total power usage of instruction window_cc1", &window_power_cc1, 0, NULL);
 
@@ -724,6 +804,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "avg_bpred_power_cc1", "avg power usage of bpred unit_cc1", "bpred_power_cc1/sim_cycle", NULL);
 
+  /* Added by A. Gellert */
+  stat_reg_formula(sdb, "avg_rb_power_cc1", "avg power usage of RB unit_cc1", "rb_power_cc1/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_lvpt_power_cc1", "avg power usage of LVPT unit_cc1", "lvpt_power_cc1/sim_cycle", NULL);
+
   stat_reg_formula(sdb, "avg_window_power_cc1", "avg power usage of instruction window_cc1", "window_power_cc1/sim_cycle",  NULL);
 
   stat_reg_formula(sdb, "avg_lsq_power_cc1", "avg power usage of lsq_cc1", "lsq_power_cc1/sim_cycle",  NULL);
@@ -746,23 +830,27 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "dispatch_stage_power_cc1", "total power usage of dispatch stage_cc1", "rename_power_cc1", NULL);
 
-  stat_reg_formula(sdb, "issue_stage_power_cc1", "total power usage of issue stage_cc1", "resultbus_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1 + lsq_power_cc1 + window_power_cc1", NULL);
+  stat_reg_formula(sdb, "issue_stage_power_cc1", "total power usage of issue stage_cc1", "resultbus_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1 + lsq_power_cc1 + window_power_cc1", NULL);
 
   stat_reg_formula(sdb, "avg_fetch_power_cc1", "average power of fetch unit per cycle_cc1", "(icache_power_cc1 + bpred_power_cc1)/ sim_cycle", /* format */NULL);
 
   stat_reg_formula(sdb, "avg_dispatch_power_cc1", "average power of dispatch unit per cycle_cc1", "(rename_power_cc1)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "avg_issue_power_cc1", "average power of issue unit per cycle_cc1", "(resultbus_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1 + lsq_power_cc1 + window_power_cc1)/ sim_cycle", /* format */NULL);
+  stat_reg_formula(sdb, "avg_issue_power_cc1", "average power of issue unit per cycle_cc1", "(resultbus_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1 + lsq_power_cc1 + window_power_cc1)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "total_power_cycle_cc1", "total power per cycle_cc1","(rename_power_cc1 + bpred_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1)", NULL);
+  stat_reg_formula(sdb, "total_power_cycle_cc1", "total power per cycle_cc1","(rename_power_cc1 + bpred_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 + alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1)", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_cycle_cc1", "average total power per cycle_cc1","(rename_power_cc1 + bpred_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 + alu_power_cc1 + dcache_power_cc1 +dcache2_power_cc1)/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_total_power_cycle_cc1", "average total power per cycle_cc1","(rename_power_cc1 + bpred_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 + alu_power_cc1 + dcache_power_cc1 +dcache2_power_cc1)/sim_cycle", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_insn_cc1", "average total power per insn_cc1","(rename_power_cc1 + bpred_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 +  alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1)/sim_total_insn", NULL);
+  stat_reg_formula(sdb, "avg_total_power_insn_cc1", "average total power per insn_cc1","(rename_power_cc1 + bpred_power_cc1 + rb_power_cc1 + lvpt_power_cc1 + lsq_power_cc1 + window_power_cc1 + regfile_power_cc1 + icache_power_cc1 + resultbus_power_cc1 + clock_power_cc1 +  alu_power_cc1 + dcache_power_cc1 + dcache2_power_cc1)/sim_total_insn", NULL);
 
   stat_reg_double(sdb, "rename_power_cc2", "total power usage of rename unit_cc2", &rename_power_cc2, 0, NULL);
 
   stat_reg_double(sdb, "bpred_power_cc2", "total power usage of bpred unit_cc2", &bpred_power_cc2, 0, NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_double(sdb, "rb_power_cc2", "total power usage of RB unit_cc2", &rb_power_cc2, 0, NULL);
+  stat_reg_double(sdb, "lvpt_power_cc2", "total power usage of LVPT unit_cc2", &lvpt_power_cc2, 0, NULL);
 
   stat_reg_double(sdb, "window_power_cc2", "total power usage of instruction window_cc2", &window_power_cc2, 0, NULL);
 
@@ -786,6 +874,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "avg_bpred_power_cc2", "avg power usage of bpred unit_cc2", "bpred_power_cc2/sim_cycle", NULL);
 
+  /* Added by A. Gellert */
+  stat_reg_formula(sdb, "avg_rb_power_cc2", "avg power usage of RB unit_cc2", "rb_power_cc2/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_lvpt_power_cc2", "avg power usage of LVPT unit_cc2", "lvpt_power_cc2/sim_cycle", NULL);
+
   stat_reg_formula(sdb, "avg_window_power_cc2", "avg power usage of instruction window_cc2", "window_power_cc2/sim_cycle",  NULL);
 
   stat_reg_formula(sdb, "avg_lsq_power_cc2", "avg power usage of instruction lsq_cc2", "lsq_power_cc2/sim_cycle",  NULL);
@@ -808,23 +900,27 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "dispatch_stage_power_cc2", "total power usage of dispatch stage_cc2", "rename_power_cc2", NULL);
 
-  stat_reg_formula(sdb, "issue_stage_power_cc2", "total power usage of issue stage_cc2", "resultbus_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2 + lsq_power_cc2 + window_power_cc2", NULL);
+  stat_reg_formula(sdb, "issue_stage_power_cc2", "total power usage of issue stage_cc2", "resultbus_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2 + lsq_power_cc2 + window_power_cc2", NULL);
 
   stat_reg_formula(sdb, "avg_fetch_power_cc2", "average power of fetch unit per cycle_cc2", "(icache_power_cc2 + bpred_power_cc2)/ sim_cycle", /* format */NULL);
 
   stat_reg_formula(sdb, "avg_dispatch_power_cc2", "average power of dispatch unit per cycle_cc2", "(rename_power_cc2)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "avg_issue_power_cc2", "average power of issue unit per cycle_cc2", "(resultbus_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2 + lsq_power_cc2 + window_power_cc2)/ sim_cycle", /* format */NULL);
+  stat_reg_formula(sdb, "avg_issue_power_cc2", "average power of issue unit per cycle_cc2", "(resultbus_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2 + lsq_power_cc2 + window_power_cc2)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "total_power_cycle_cc2", "total power per cycle_cc2","(rename_power_cc2 + bpred_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)", NULL);
+  stat_reg_formula(sdb, "total_power_cycle_cc2", "total power per cycle_cc2","(rename_power_cc2 + bpred_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_cycle_cc2", "average total power per cycle_cc2","(rename_power_cc2 + bpred_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_total_power_cycle_cc2", "average total power per cycle_cc2","(rename_power_cc2 + bpred_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)/sim_cycle", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_insn_cc2", "average total power per insn_cc2","(rename_power_cc2 + bpred_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)/sim_total_insn", NULL);
+  stat_reg_formula(sdb, "avg_total_power_insn_cc2", "average total power per insn_cc2","(rename_power_cc2 + bpred_power_cc2 + rb_power_cc2 + lvpt_power_cc2 + lsq_power_cc2 + window_power_cc2 + regfile_power_cc2 + icache_power_cc2 + resultbus_power_cc2 + clock_power_cc2 + alu_power_cc2 + dcache_power_cc2 + dcache2_power_cc2)/sim_total_insn", NULL);
 
   stat_reg_double(sdb, "rename_power_cc3", "total power usage of rename unit_cc3", &rename_power_cc3, 0, NULL);
 
   stat_reg_double(sdb, "bpred_power_cc3", "total power usage of bpred unit_cc3", &bpred_power_cc3, 0, NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_double(sdb, "rb_power_cc3", "total power usage of RB unit_cc3", &rb_power_cc3, 0, NULL);
+  stat_reg_double(sdb, "lvpt_power_cc3", "total power usage of LVPT unit_cc3", &lvpt_power_cc3, 0, NULL);
 
   stat_reg_double(sdb, "window_power_cc3", "total power usage of instruction window_cc3", &window_power_cc3, 0, NULL);
 
@@ -848,6 +944,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "avg_bpred_power_cc3", "avg power usage of bpred unit_cc3", "bpred_power_cc3/sim_cycle", NULL);
 
+  /* Added by A. Gellert */
+  stat_reg_formula(sdb, "avg_rb_power_cc3", "avg power usage of RB unit_cc3", "rb_power_cc3/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_lvpt_power_cc3", "avg power usage of LVPT unit_cc3", "lvpt_power_cc3/sim_cycle", NULL);
+
   stat_reg_formula(sdb, "avg_window_power_cc3", "avg power usage of instruction window_cc3", "window_power_cc3/sim_cycle",  NULL);
 
   stat_reg_formula(sdb, "avg_lsq_power_cc3", "avg power usage of instruction lsq_cc3", "lsq_power_cc3/sim_cycle",  NULL);
@@ -870,23 +970,27 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "dispatch_stage_power_cc3", "total power usage of dispatch stage_cc3", "rename_power_cc3", NULL);
 
-  stat_reg_formula(sdb, "issue_stage_power_cc3", "total power usage of issue stage_cc3", "resultbus_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3 + lsq_power_cc3 + window_power_cc3", NULL);
+  stat_reg_formula(sdb, "issue_stage_power_cc3", "total power usage of issue stage_cc3", "resultbus_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3 + lsq_power_cc3 + window_power_cc3", NULL);
 
   stat_reg_formula(sdb, "avg_fetch_power_cc3", "average power of fetch unit per cycle_cc3", "(icache_power_cc3 + bpred_power_cc3)/ sim_cycle", /* format */NULL);
 
   stat_reg_formula(sdb, "avg_dispatch_power_cc3", "average power of dispatch unit per cycle_cc3", "(rename_power_cc3)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "avg_issue_power_cc3", "average power of issue unit per cycle_cc3", "(resultbus_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3 + lsq_power_cc3 + window_power_cc3)/ sim_cycle", /* format */NULL);
+  stat_reg_formula(sdb, "avg_issue_power_cc3", "average power of issue unit per cycle_cc3", "(resultbus_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3 + lsq_power_cc3 + window_power_cc3)/ sim_cycle", /* format */NULL);
 
-  stat_reg_formula(sdb, "total_power_cycle_cc3", "total power per cycle_cc3","(rename_power_cc3 + bpred_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)", NULL);
+  stat_reg_formula(sdb, "total_power_cycle_cc3", "total power per cycle_cc3","(rename_power_cc3 + bpred_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_cycle_cc3", "average total power per cycle_cc3","(rename_power_cc3 + bpred_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_total_power_cycle_cc3", "average total power per cycle_cc3","(rename_power_cc3 + bpred_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)/sim_cycle", NULL);
 
-  stat_reg_formula(sdb, "avg_total_power_insn_cc3", "average total power per insn_cc3","(rename_power_cc3 + bpred_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)/sim_total_insn", NULL);
+  stat_reg_formula(sdb, "avg_total_power_insn_cc3", "average total power per insn_cc3","(rename_power_cc3 + bpred_power_cc3 + rb_power_cc3 + lvpt_power_cc3 + lsq_power_cc3 + window_power_cc3 + regfile_power_cc3 + icache_power_cc3 + resultbus_power_cc3 + clock_power_cc3 + alu_power_cc3 + dcache_power_cc3 + dcache2_power_cc3)/sim_total_insn", NULL);
 
   stat_reg_counter(sdb, "total_rename_access", "total number accesses of rename unit", &total_rename_access, 0, NULL);
 
   stat_reg_counter(sdb, "total_bpred_access", "total number accesses of bpred unit", &total_bpred_access, 0, NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_counter(sdb, "total_rb_access", "total number accesses of RB unit", &total_rb_access, 0, NULL);
+  stat_reg_counter(sdb, "total_lvpt_access", "total number accesses of LVPT unit", &total_lvpt_access, 0, NULL);
 
   stat_reg_counter(sdb, "total_window_access", "total number accesses of instruction window", &total_window_access, 0, NULL);
 
@@ -908,6 +1012,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
 
   stat_reg_formula(sdb, "avg_bpred_access", "avg number accesses of bpred unit", "total_bpred_access/sim_cycle", NULL);
 
+  /* Added by A. Gellert */
+  stat_reg_formula(sdb, "avg_rb_access", "avg number accesses of RB unit", "total_rb_access/sim_cycle", NULL);
+  stat_reg_formula(sdb, "avg_lvpt_access", "avg number accesses of LVPT unit", "total_lvpt_access/sim_cycle", NULL);
+
   stat_reg_formula(sdb, "avg_window_access", "avg number accesses of instruction window", "total_window_access/sim_cycle",  NULL);
 
   stat_reg_formula(sdb, "avg_lsq_access", "avg number accesses of lsq", "total_lsq_access/sim_cycle",  NULL);
@@ -927,6 +1035,10 @@ power_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
   stat_reg_counter(sdb, "max_rename_access", "max number accesses of rename unit", &max_rename_access, 0, NULL);
 
   stat_reg_counter(sdb, "max_bpred_access", "max number accesses of bpred unit", &max_bpred_access, 0, NULL);
+
+  /* Added by A. Gellert */
+  stat_reg_counter(sdb, "max_rb_access", "max number accesses of RB unit", &max_rb_access, 0, NULL);
+  stat_reg_counter(sdb, "max_lvpt_access", "max number accesses of LVPT unit", &max_lvpt_access, 0, NULL);
 
   stat_reg_counter(sdb, "max_window_access", "max number accesses of instruction window", &max_window_access, 0, NULL);
 
@@ -1024,6 +1136,8 @@ void dump_power_stats(power)
 {
   double total_power;
   double bpred_power;
+  double rb_power;	/* A. Gellert */
+  double lvpt_power;	/* A. Gellert */
   double rename_power;
   double rat_power;
   double dcl_power;
@@ -1053,6 +1167,9 @@ void dump_power_stats(power)
 
   bpred_power = power->btb + power->local_predict + power->global_predict + 
     power->chooser + power->ras;
+
+  rb_power = power->rb_power;		/* A. Gellert */
+  lvpt_power = power->lvpt_power;	/* A. Gellert */
 
   rat_power = power->rat_decoder + 
     power->rat_wordline + power->rat_bitline + power->rat_senseamp;
@@ -1085,7 +1202,7 @@ void dump_power_stats(power)
     power->regfile_wordline + power->regfile_bitline + 
     power->regfile_senseamp;
 
-  total_power = bpred_power + rename_power + window_power + regfile_power +
+  total_power = bpred_power + rb_power + lvpt_power + rename_power + window_power + regfile_power +
     power->resultbus + lsq_power + 
     icache_power + dcache_power + dcache2_power + 
     dtlb_power + itlb_power + power->clock_power + power->ialu_power +
@@ -1105,6 +1222,11 @@ void dump_power_stats(power)
   fprintf(stderr," global predict power (W): %g\n",power->global_predict);
   fprintf(stderr," chooser power (W): %g\n",power->chooser);
   fprintf(stderr," RAS power (W): %g\n",power->ras);
+
+  /* Added by A. Gellert */
+  fprintf(stderr,"Reuse Buffer Power Consumption: %g  (%.3g%%)\n",rb_power,100*rb_power/total_power);
+  fprintf(stderr,"LVPT Power Consumption: %g  (%.3g%%)\n",lvpt_power,100*lvpt_power/total_power);
+
   fprintf(stderr,"Rename Logic Power Consumption: %g  (%.3g%%)\n",rename_power,100*rename_power/total_power);
   fprintf(stderr," Instruction Decode Power (W): %g\n",power->inst_decoder_power);
   fprintf(stderr," RAT decode_power (W): %g\n",power->rat_decoder);
@@ -1996,6 +2118,32 @@ void calculate_power(power)
     fprintf(stderr,"RAS predict power stats\n");
   power->ras = simple_array_power(ras_size,data_width,1,1,0);
 
+  /* Added by A. Gellert for the Reuse Buffer (RB) */
+  if(verbose)
+    fprintf(stderr,"RB_size == %d\n",RB_size);
+  cache = 1;
+  scale_factor = squarify(RB_size/*rows*/, 4/*cols*/);
+  predeclength = RB_size/scale_factor * (RegCellHeight + WordlineSpacing);
+  wordlinelength = 4*scale_factor *  (RegCellWidth + BitlineSpacing);
+  bitlinelength = RB_size/scale_factor * (RegCellHeight + WordlineSpacing);
+  if(verbose)
+    fprintf(stderr,"Reuse Buffer power stats\n");
+  power->rb_power = array_decoder_power(RB_size/scale_factor,4*scale_factor,predeclength,1,1,cache) + array_wordline_power(RB_size/scale_factor,4*scale_factor,wordlinelength,1,1,cache) + array_bitline_power(RB_size/scale_factor,4*scale_factor,bitlinelength,1,1,cache) + senseamp_power(4*scale_factor);
+  /* End Of RB Power Computation, @author A. Gellert */
+
+  /* Added by A. Gellert for the LVPT */
+  if(verbose)
+    fprintf(stderr,"LVPT_size == %d\n",LVPT_size);
+  cache = 1;
+  scale_factor = squarify(LVPT_size/*rows*/, 3/*cols*/);
+  predeclength = LVPT_size/scale_factor * (RegCellHeight + WordlineSpacing);
+  wordlinelength = 3*scale_factor *  (RegCellWidth + BitlineSpacing);
+  bitlinelength = LVPT_size/scale_factor * (RegCellHeight + WordlineSpacing);
+  if(verbose)
+    fprintf(stderr,"LVPT power stats\n");
+  power->lvpt_power = array_decoder_power(LVPT_size/scale_factor,3*scale_factor,predeclength,1,1,cache) + array_wordline_power(LVPT_size/scale_factor,3*scale_factor,wordlinelength,1,1,cache) + array_bitline_power(LVPT_size/scale_factor,3*scale_factor,bitlinelength,1,1,cache) + senseamp_power(3*scale_factor);
+  /* End Of LVPT Power Computation, @author A. Gellert */
+
   tagsize = va_size - ((int)logtwo(cache_dl1->nsets) + (int)logtwo(cache_dl1->bsize));
 
   if(verbose)
@@ -2204,6 +2352,9 @@ void calculate_power(power)
   power->global_predict *= crossover_scaling;
   power->chooser *= crossover_scaling;
 
+  power->rb_power *= crossover_scaling;		/* A. Gellert */
+  power->lvpt_power *= crossover_scaling;	/* A. Gellert */
+
   power->dtlb *= crossover_scaling;
 
   power->itlb *= crossover_scaling;
@@ -2255,7 +2406,9 @@ void calculate_power(power)
     power->itlb + 
     power->dcache_power + 
     power->dtlb + 
-    power->dcache2_power;
+    power->dcache2_power +
+    power->rb_power +
+    power->lvpt_power;
 
   power->total_power_nodcache2 =power->local_predict + power->global_predict + 
     power->chooser + power->btb +
@@ -2278,7 +2431,9 @@ void calculate_power(power)
     power->itlb + 
     power->dcache_power + 
     power->dtlb + 
-    power->dcache2_power;
+    power->dcache2_power +
+    power->rb_power +
+    power->lvpt_power;
 
   power->bpred_power = power->btb + power->local_predict + power->global_predict + power->chooser + power->ras;
 

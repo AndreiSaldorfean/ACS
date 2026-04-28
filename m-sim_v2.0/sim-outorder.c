@@ -113,6 +113,171 @@
  * pipeline operations.
  */
 
+/* 
+ * Instruction reuse scheme evaluation:
+ * structures, variables and functions.
+ * @author Arpad Gellert, ULBS, 1/01/2008
+ */
+
+/* RB structure */
+/* Instead of qword_t could be also dfloat_t, both types being on 64 bits */
+/* That's why we have one RB for both integer and FP instructions */
+struct RBLocation
+{
+  md_addr_t tag;	// the higher part of the buffered instruction's PC 
+  qword_t srcval1;	// first source value
+  qword_t srcval2;	// second source value
+  qword_t res;		// result value -- allocated only for WATTCH!
+};
+
+/* RB declaration */
+int RB_size = 1024;
+struct RBLocation rbuff[10000];
+int RB_index_width = 0;
+
+/* Insert a new instruction into the RB with one non-immediate operand */
+/* Instead of qword_t could be also dfloat_t, both types being on 64 bits */
+/* That's why we have one RB for both integer and FP instructions */
+void addInstToRB1(unsigned int index, md_addr_t tag, qword_t val1)
+{
+  rbuff[index].tag = tag;
+  rbuff[index].srcval1 = val1;
+  /* result value is also written (in the simulator it is not necessary) */
+}
+
+/* Insert a new instruction into the RB with two non-immediate operands */
+/* Instead of qword_t could be also dfloat_t, both types being on 64 bits */
+/* That's why we have one RB for both integer and FP instructions */
+void addInstToRB2(unsigned int index, md_addr_t tag, qword_t val1, qword_t val2)
+{
+  rbuff[index].tag = tag;
+  rbuff[index].srcval1 = val1;
+  rbuff[index].srcval2 = val2;
+  /* result value is also written (in the simulator it is not necessary) */
+}
+
+/* 
+ * Verifies if the instruction with the specified address (index + tag)
+ * is in the RB (Reuse Buffer)
+ */
+int isInstInRB(unsigned int index, md_addr_t tag)
+{
+  if(rbuff[index].tag == tag) return 1;
+  return 0;
+}
+
+/* Generate a reuse test for an instruction with one non-immediate operand
+ * and update the value in case of hit.
+ * Instead of qword_t could be also dfloat_t, both types being on 64 bits. 
+ * That's why we have one RB for both integer and FP instructions.
+ */
+int ReuseTest1(unsigned int index, qword_t val1)
+{
+  if(rbuff[index].srcval1 == val1) return 1;
+  return 0;
+}
+
+/* generate a reuse test for an instruction with two non-immediate operands
+ * and update the values in case of hit.
+ * Instead of qword_t could be also dfloat_t, both types being on 64 bits. 
+ * That's why we have one RB for both integer and FP instructions.
+ */
+int ReuseTest2(unsigned int index, qword_t val1, qword_t val2)
+{
+  if((rbuff[index].srcval1 == val1) && (rbuff[index].srcval2 == val2)) return 1;
+  return 0;
+}
+
+
+/* total number of MUL & DIV instructions executed */
+static counter_t n_mul_div = 0;
+
+/* total number of reusable MUL & DIV instructions executed */
+static counter_t n_reused_mul_div = 0; 
+
+
+/* 
+ * Load Value Predictor evaluation:
+ * structures, variables and functions.
+ * @author Arpad Gellert, ULBS, 1/04/2008
+ */
+
+/* LVPT structure */
+/* Instead of qword_t could be also dfloat_t, both types being on 64 bits */
+struct LVPTLocation
+{
+  md_addr_t tag;	// the higher part of the Load instruction's PC 
+  byte_t counter;	// 2-bit saturating counter
+  qword_t value;	// Load value
+};
+
+/* LVPT declaration */
+int LVPT_size = 1024;
+struct LVPTLocation lvpt[10000];
+int LVPT_index_width = 0;
+
+/* Insert a new Load into the LVPT */
+/* Instead of qword_t could be also dfloat_t, both types being on 64 bits */
+void addToLVPT(unsigned int index, md_addr_t tag, qword_t val)
+{
+  lvpt[index].tag = tag;
+  lvpt[index].counter = 0;
+  lvpt[index].value = val;
+}
+
+/* 
+ * Verifies if the Load with the specified address (index + tag)
+ * is in the LVPT (Load Value Prediction Table)
+ */
+bool_t isInLVPT(unsigned int index, md_addr_t tag)
+{
+  if(lvpt[index].tag == tag) return TRUE;
+  return FALSE;
+}
+
+/*
+ * Evaluate predictability.
+ */
+bool_t isPredictable(unsigned int index)
+{
+  if(lvpt[index].counter > 1) return TRUE;
+  return FALSE;
+}
+
+/* 
+ * Evaluate prediction correctness.
+ * Instead of qword_t could be also dfloat_t, both types being on 64 bits.
+ */
+bool_t correctPrediction(unsigned int index, qword_t val)
+{
+  if(lvpt[index].value == val) return TRUE;	
+  return FALSE;
+}
+
+/* 
+ * Update LVPT.
+ * Instead of qword_t could be also dfloat_t, both types being on 64 bits.
+ */
+void updateLVPT(unsigned int index, md_addr_t tag, qword_t val, bool_t increase_counter)
+{
+	lvpt[index].tag = tag;
+	lvpt[index].value = val;
+	if(increase_counter && (lvpt[index].counter < 3)) lvpt[index].counter++;
+	else if(!increase_counter && (lvpt[index].counter > 0)) lvpt[index].counter--;
+}
+
+/* total number of loads issued */
+static counter_t n_loads = 0;
+
+/* total number of critical loads issued */
+static counter_t n_critical_loads = 0;
+
+/* total number of (critical) loads predicted */
+static counter_t n_load_predictions = 0;
+
+/* total number of correctly predicted (critical) loads */
+static counter_t n_correct_load_predictions = 0;
+
 
 /*
  * simulator options
@@ -340,6 +505,10 @@ counter_t regfile_total_pop_count_cycle=0;
 counter_t regfile_num_pop_count_cycle=0;
 counter_t resultbus_total_pop_count_cycle=0;
 counter_t resultbus_num_pop_count_cycle=0;
+
+/* added by A. Gellert for Wattch */
+counter_t rb_access = 0;
+counter_t lvpt_access = 0;
 
 /* text-based stat profiles */
 #define MAX_PCSTAT_VARS 8
@@ -1032,6 +1201,18 @@ sim_reg_options(struct opt_odb_t *odb)
 	      &ROB_size, /* default */128,
 	      /* print */TRUE, /* format */NULL);
 
+  /* Reuse Buffer Size @ Arpad Gellert */
+  opt_reg_int(odb, "-rb:size",
+	      "reuse buffer (RB) size",
+	      &RB_size, /* default */1024,
+	      /* print */TRUE, /* format */NULL);
+
+  /* LVPT Size @ Arpad Gellert */
+  opt_reg_int(odb, "-lvpt:size",
+	      "LVPT size",
+	      &LVPT_size, /* default */1024,
+	      /* print */TRUE, /* format */NULL);
+
   opt_reg_string(odb, "-fetch:policy |icount|round_robin|",
 	      "fetch policy",
 	      &fetch_policy, /* default */"icount",
@@ -1653,6 +1834,44 @@ sim_reg_stats(struct stat_sdb_t *sdb)   /* stats database */
   stat_reg_counter(sdb, "sim_num_branches",
 		   "total number of branches committed",
 		   &sim_num_branches, /* initial value */0, /* format */NULL);
+
+
+  /* REUSABILITY RESULTS */
+
+  stat_reg_counter(sdb, "n_mul_div",
+		   "total number of MUL & DIV instructions",
+		   &n_mul_div, /* initial value */0, /* format */NULL);
+
+  stat_reg_counter(sdb, "n_reused_mul_div",
+		   "total number of reusable MUL & DIV instructions",
+		   &n_reused_mul_div, /* initial value */0, /* format */NULL);
+
+  stat_reg_formula(sdb, "reuse_degree",
+		   "MUL/DIV reusability degree",
+		   "n_reused_mul_div / n_mul_div", NULL);
+
+  /* LOAD VALUE PREDICTION RESULTS */
+
+  stat_reg_counter(sdb, "n_loads",
+		   "total number of loads issued",
+		   &n_loads, /* initial value */0, /* format */NULL);
+
+  stat_reg_counter(sdb, "n_critical_loads",
+		   "total number of critical loads issued",
+		   &n_critical_loads, /* initial value */0, /* format */NULL);
+
+  stat_reg_counter(sdb, "n_load_predictions",
+		   "total number of loads predicted",
+		   &n_load_predictions, /* initial value */0, /* format */NULL);
+
+  stat_reg_counter(sdb, "n_correct_load_predictions",
+		   "total number of correctly predicted loads",
+		   &n_correct_load_predictions, /* initial value */0, /* format */NULL);
+
+  stat_reg_formula(sdb, "pred_accuracy",
+		   "load prediction accuracy",
+		   "(n_correct_load_predictions * 100) / n_load_predictions", NULL);
+
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
@@ -2006,10 +2225,13 @@ struct ROB_entry {
   unsigned int ptrace_seq;		/* pipetrace sequence number */
 
   /* Wattch: values of source operands and result operand used for AF generation */
-  quad_t val_ra, val_rb, val_rc, val_ra_result;
+  qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
   
   int slip;
   int exec_lat;                         /* execution latency */
+
+  bool_t no_exec;			/* added by A. Gellert to invalidate execution by the Reuse Buffer */
+
   /* instruction status */
   int dispatched;
   int queued;				/* operands ready and queued */
@@ -2823,6 +3045,63 @@ commit(int context_id)
 #endif
       }
 
+
+	    /****** Evaluating Instruction Reuse Degree ******/
+			 /******   DIV / MUL	******/	
+	
+	if(!rs->no_exec)
+	{
+	    if (MD_OP_FLAGS(rs->op) & F_ICOMP)
+	    {
+		unsigned int RB_index = rs->PC & (RB_size - 1);
+		md_addr_t RB_Tag = rs->PC >> RB_index_width;
+
+		switch(rs->op){
+		  /* integer MUL instructions without immediate operands */
+		  case UMULH:
+		  case MULL:
+		  case MULQ:
+		    /* updating the RB */
+		    addInstToRB2(RB_index, RB_Tag, rs->val_ra, rs->val_rb);
+		    rb_access++;
+		    break;
+
+		  /* integer MUL instructions with one immediate operand */
+		  case UMULHI:
+		  case MULLI:
+		  case MULQI:
+		    /* updating the RB */
+		    addInstToRB1(RB_index, RB_Tag, rs->val_ra);
+		    rb_access++;
+	   	    break;
+
+		  default:
+		    break;
+		}
+	    }
+
+	    if (MD_OP_FLAGS(rs->op) & F_FCOMP)
+	    {
+		unsigned int RB_index = rs->PC & (RB_size - 1);
+		md_addr_t RB_Tag = rs->PC >> RB_index_width;
+
+		switch(rs->op){
+	          /* floating point MUL/DIV instructions without immediate operands */
+		  case MULS:
+		  case DIVS:
+		  case MULT:
+		  case DIVT:
+		    /* updating the RB */
+		    addInstToRB2(RB_index, RB_Tag, rs->val_ra, rs->val_rb);
+		    rb_access++;
+		    break;
+
+		  default:
+		    break;
+	        }
+	    }
+	}
+
       if (contexts[context_id].pred
 	  && bpred_spec_update == spec_CT
 	  && (MD_OP_FLAGS(rs->op) & F_CTRL))
@@ -3561,6 +3840,120 @@ selection(void)
 	  /* node is now un-queued */
 	  rs->queued = FALSE;
 
+
+	/* Identifying reusable MUL/DIV whose operands were not ready at REGISTER RENAME */
+	if ((MD_OP_FUCLASS(rs->op) != NA) && (MD_OP_FLAGS(rs->op) & F_ICOMP) && (!rs->no_exec))
+	    {
+		unsigned int RB_index = rs->PC & (RB_size - 1);
+		md_addr_t RB_Tag = rs->PC >> RB_index_width;
+
+		switch(rs->op){
+		  /* integer MUL instructions without immediate operands */
+		  case UMULH:
+		  case MULL:
+		  case MULQ:
+		    /* trivial operation: val*0, val*1 */
+		    if(rs->val_ra == 0 || rs->val_rb == 0 || rs->val_ra == 1 || rs->val_rb == 1)
+		    {
+			n_reused_mul_div++;	/* not executed operation */
+			rs->no_exec = TRUE;
+		    }
+		    /* instruction found in the RB */
+		    else if(isInstInRB(RB_index, RB_Tag))	
+		    {
+		    	/* generate reuse test and update the source values */
+		    	if(all_operands_spec_ready(rs) && ReuseTest2(RB_index, rs->val_ra,  rs->val_rb))
+			{
+			    n_reused_mul_div++;	/* reusable mul & div instructions */
+			    rs->no_exec = TRUE;
+			}
+		    }
+		    /* the RB is updated only in the commit stage */
+		    break;
+
+		  /* integer MUL instructions with one immediate operand */
+		  case UMULHI:
+		  case MULLI:
+		  case MULQI:
+		    /* trivial operation: val*0, val*1 */
+		    if(rs->val_ra == 0 || rs->val_im == 0 || rs->val_ra == 1 || rs->val_im == 1)
+		    {
+			n_reused_mul_div++;	/* not executed operation */
+			rs->no_exec = TRUE;
+		    }
+		    /* instruction found in the RB */
+		    else if(isInstInRB(RB_index, RB_Tag))	
+		    {
+		    	/* generate reuse test and update the source value */
+		    	if(all_operands_spec_ready(rs) && ReuseTest1(RB_index, rs->val_ra))
+			{
+			    n_reused_mul_div++;	/* reusable mul & div instructions */
+			    rs->no_exec = TRUE;
+			}
+		    }
+		    /* the RB is updated only in the commit stage */
+	   	    break;
+
+		  default:
+		    break;
+		}
+	    }
+
+	    if ((MD_OP_FUCLASS(rs->op) != NA) && (MD_OP_FLAGS(rs->op) & F_FCOMP) && (!rs->no_exec))
+	    {
+		unsigned int RB_index = rs->PC & (RB_size - 1);
+		md_addr_t RB_Tag = rs->PC >> RB_index_width;
+
+		switch(rs->op){
+	          /* floating point MUL instructions without immediate operands */
+		  case MULS:
+		  case MULT:
+		    /* trivial operation: val*0, val*1 */
+		    if(rs->val_ra == 0 || rs->val_rb == 0 || rs->val_ra == 1 || rs->val_rb == 1)
+		    {
+			n_reused_mul_div++;	/* not executed operation */
+			rs->no_exec = TRUE;
+		    }
+		    /* instruction found in the RB */
+		    else if(isInstInRB(RB_index, RB_Tag))	
+		    {
+		    	/* generate reuse test and update the source values */
+		    	if(all_operands_spec_ready(rs) && ReuseTest2(RB_index, rs->val_ra,  rs->val_rb))
+			{
+			    n_reused_mul_div++;	/* reusable mul & div instructions */
+			    rs->no_exec = TRUE;
+			}
+		    }
+		    /* the RB is updated only in the commit stage */
+		    break;
+
+		  /* floating point DIV instructions without immediate operands */
+		  case DIVS:
+		  case DIVT:
+		    /* trivial operation: 0/val, val/1, val/val */
+		    if(rs->val_ra == 0 || rs->val_rb == 1 || rs->val_ra == rs->val_rb)
+		    {
+			n_reused_mul_div++;	/* not executed operation */
+			rs->no_exec = TRUE;
+		    }
+		    /* instruction found in the RB */
+		    else if(isInstInRB(RB_index, RB_Tag))	
+		    {
+		    	/* generate reuse test and update the source values */
+		    	if(all_operands_spec_ready(rs) && ReuseTest2(RB_index, rs->val_ra,  rs->val_rb))
+			{
+			    n_reused_mul_div++;	/* reusable mul & div instructions */
+			    rs->no_exec = TRUE;
+			}
+		    }
+		    /* the RB is updated only in the commit stage */
+		    break;
+
+		  default:
+		    break;
+	        }
+	    }
+
 	  if (rs->in_LSQ
 	      && ((MD_OP_FLAGS(rs->op) & (F_MEM|F_STORE)) == (F_MEM|F_STORE)))
 	    {
@@ -3596,7 +3989,7 @@ selection(void)
 	  else
 	    {
 	      /* issue the instruction to a functional unit */
-	      if (MD_OP_FUCLASS(rs->op) != NA)
+	      if (MD_OP_FUCLASS(rs->op) != NA && !rs->no_exec)
 		{
 		  fu = res_get(fu_pool, MD_OP_FUCLASS(rs->op));
 		  if (fu)
@@ -3696,6 +4089,50 @@ selection(void)
 
 			  /* use computed cache access latency */
 			  rs->exec_lat = load_lat;
+
+
+			/* 
+ 			 * Load Value Predictor evaluation.
+ 			 * @author Arpad Gellert, ULBS, 1/04/2008
+			 */
+			  n_loads++;
+			  /* LVPT access in case of miss in L1 data cache */
+			  if(load_lat > cache_dl1_lat)
+			  {
+				unsigned int LVPT_index = rs->PC & (LVPT_size - 1);
+				md_addr_t LVPT_Tag = rs->PC >> LVPT_index_width;
+				lvpt_access++;
+				n_critical_loads++;
+				/* hit in LVPT */
+				if(isInLVPT(LVPT_index, LVPT_Tag)){
+					/* the counter is in "predict" state */
+					if(isPredictable(LVPT_index)){
+						n_load_predictions++;
+						/* prediction & update */
+						if(correctPrediction(LVPT_index, rs->val_ra)){
+							/* Correct Prediction */
+							n_correct_load_predictions++;
+							updateLVPT(LVPT_index, LVPT_Tag, rs->val_ra, TRUE);
+							/* Correctly predicted load's latency */
+							rs->exec_lat = 1;
+						}
+						else{
+							/* Misprediction */
+							updateLVPT(LVPT_index, LVPT_Tag, rs->val_ra, FALSE);
+							/* Mispredicted load's latency (recovery)*/
+							rs->exec_lat += 7;	
+						}
+					}
+					/* the counter is in "don't predict" state */
+					else{
+						/* update without providing the prediction */
+						if(correctPrediction(LVPT_index, rs->val_ra)) updateLVPT(LVPT_index, LVPT_Tag, rs->val_ra, TRUE);
+						else updateLVPT(LVPT_index, LVPT_Tag, rs->val_ra, FALSE);
+					}
+				}
+				/* miss in LVPT */
+				else addToLVPT(LVPT_index, LVPT_Tag, rs->val_ra);
+			  }
 
 			  issue_exec_q_queue_event(rs, sim_cycle + ISSUE_EXEC_DELAY);
 			   
@@ -3851,17 +4288,21 @@ selection(void)
 		  case REG_INT:
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
-		    int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    if(rs->no_exec) int_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
+		    else int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
 		    /* data will be on the bypass network when this instruction completes execution */
-		    int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+		    if(rs->no_exec) int_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
+		    else int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
 		    break;
 		    
 		  case REG_FP:
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
-		    fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    if(rs->no_exec) fp_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
+		    else fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
 		    /* data will be on the bypass network when this instruction completes execution */
-		    fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+		    if(rs->no_exec) fp_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
+		    else fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY; 
 		    break;
 		    
 		  case REG_NONE:
@@ -5058,7 +5499,7 @@ register_rename(void)
   int spec_mode = contexts[disp_context_id].spec_mode; /* indicates if the current context is in speculative mode */
 
   /* Wattch:  Added for pop count generation (AFs) */
-  quad_t val_ra, val_rb, val_rc, val_ra_result;
+  qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
 
   made_check = FALSE;
   n_renamed = 0;
@@ -5212,6 +5653,7 @@ register_rename(void)
       /* Wattch: Get values of source operands */
       val_ra = GPR(RA);
       val_rb = GPR(RB);
+      val_im = IMM;
 
       /* set default fault - none */
       fault = md_fault_none;
@@ -5350,6 +5792,7 @@ register_rename(void)
 	  /* fill in ROB entry */
 	  rs = &contexts[disp_context_id].ROB[contexts[disp_context_id].ROB_tail];
           rs->slip = sim_cycle - 1;
+	  rs->no_exec = FALSE;	/* added by A. Gellert */
 	  rs->IR = inst;
 	  rs->op = op;
 	  rs->PC = regs->regs_PC;
@@ -5410,6 +5853,7 @@ register_rename(void)
 	  rs->val_rb = val_rb;
 	  rs->val_rc = val_rc;
 	  rs->val_ra_result = val_ra_result;
+	  rs->val_im = val_im;
 
 
 	  /* split ld/st's into two operations: eff addr comp + mem access */
@@ -5422,6 +5866,7 @@ register_rename(void)
 	      /* fill in LSQ entry */
 	      lsq = &contexts[disp_context_id].LSQ[contexts[disp_context_id].LSQ_tail];
               lsq->slip = sim_cycle - 1;
+	      lsq->no_exec = FALSE;	/* added by A. Gellert */
 	      lsq->IR = inst;
 	      lsq->op = op;
 	      lsq->PC = regs->regs_PC;
@@ -5459,6 +5904,7 @@ register_rename(void)
 	      lsq->val_rb = val_rb;
 	      lsq->val_rc = val_rc;
 	      lsq->val_ra_result = val_ra_result;
+	      lsq->val_im = val_im;
 
 	      /* pipetrace this uop */
 	      ptrace_newuop(lsq->ptrace_seq, "internal ld/st", lsq->PC, 0);
@@ -5484,6 +5930,46 @@ register_rename(void)
 	      contexts[disp_context_id].ROB_tail = (contexts[disp_context_id].ROB_tail + 1) % ROB_size;
 	      contexts[disp_context_id].ROB_num++;
 
+	    }
+
+
+	    /****** Evaluating Instruction Reuse Degree ******/
+			 /******   DIV / MUL	******/	
+
+	    if (MD_OP_FLAGS(op) & F_ICOMP)
+	    {
+		switch(op){
+		  /* integer MUL instructions without immediate operands */
+		  case UMULH:
+		  case MULL:
+		  case MULQ:
+		  case UMULHI:
+		  case MULLI:
+		  case MULQI:
+		    n_mul_div++;	/* total number of mul & div instructions */
+		    /* the RB is accessed only in the issue stage and updated in the commit stage */
+		    break;
+
+		  default:
+		    break;
+		}
+	    }
+
+	    if (MD_OP_FLAGS(op) & F_FCOMP)
+	    {
+		switch(op){
+	          /* floating point MUL/DIV instructions without immediate operands */
+		  case MULS:
+		  case DIVS:
+		  case MULT:
+		  case DIVT:
+		    n_mul_div++;	/* total number of mul & div instructions */
+		    /* the RB is accessed only in the issue stage and updated in the commit stage */
+		    break;
+
+		  default:
+		    break;
+	        }
 	    }
 	}
       else
@@ -6197,6 +6683,21 @@ void
 sim_main(void)
 {
   int i;
+
+  /* computing the width of Reuse Buffer index */
+  unsigned int RB_shift_width = RB_size-1;
+  while(RB_shift_width != 0){
+	RB_index_width++;
+	RB_shift_width >>= 1;
+  }
+
+  /* computing the width of LVPT index */
+  unsigned int LVPT_shift_width = LVPT_size-1;
+  while(LVPT_shift_width != 0){
+	LVPT_index_width++;
+	LVPT_shift_width >>= 1;
+  }
+
   /* ignore any floating point exceptions, they may occur on mis-speculated
      execution paths */
   signal(SIGFPE, SIG_IGN);
