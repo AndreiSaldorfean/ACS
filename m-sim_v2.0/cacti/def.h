@@ -81,10 +81,14 @@
  */
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define FUDGEFACTOR 10.0
 =======
 #define FUDGEFACTOR 1.0
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+#define FUDGEFACTOR 10.0
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 
 /*===================================================================*/

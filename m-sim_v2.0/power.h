@@ -104,10 +104,14 @@
  */
  
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define FUDGEFACTOR 10.0
 =======
 #define FUDGEFACTOR 1.0
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+#define FUDGEFACTOR 10.0
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 /*===================================================================*/
 
@@ -535,14 +539,20 @@ typedef struct {
   double clock_power;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   /* Added by A. Gellert for the Reuse Buffer (RB) */
   double rb_power;
 
   /* Added by A. Gellert for the LVPT */
   double lvpt_power;
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 } power_result_type;
 
 /* Used to pass values around the program */
@@ -595,9 +605,14 @@ void calculate_time(time_result_type*, time_parameter_type*);
 void output_data(time_result_type*, time_parameter_type*);
 void calculate_power(power_result_type*);
 <<<<<<< HEAD
+<<<<<<< HEAD
 int pop_count(qword_t bits);
 int pop_count_slow(qword_t bits);
 =======
 int pop_count(quad_t bits);
 int pop_count_slow(quad_t bits);
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+int pop_count(qword_t bits);
+int pop_count_slow(qword_t bits);
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)

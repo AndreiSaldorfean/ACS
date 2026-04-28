@@ -114,6 +114,9 @@
  */
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 /* 
  * Instruction reuse scheme evaluation:
  * structures, variables and functions.
@@ -279,8 +282,11 @@ static counter_t n_load_predictions = 0;
 /* total number of correctly predicted (critical) loads */
 static counter_t n_correct_load_predictions = 0;
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 /*
  * simulator options
@@ -510,12 +516,18 @@ counter_t resultbus_total_pop_count_cycle=0;
 counter_t resultbus_num_pop_count_cycle=0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 /* added by A. Gellert for Wattch */
 counter_t rb_access = 0;
 counter_t lvpt_access = 0;
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 /* text-based stat profiles */
 #define MAX_PCSTAT_VARS 8
 static int pcstat_nelt = 0;
@@ -1208,6 +1220,9 @@ sim_reg_options(struct opt_odb_t *odb)
 	      /* print */TRUE, /* format */NULL);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   /* Reuse Buffer Size @ Arpad Gellert */
   opt_reg_int(odb, "-rb:size",
 	      "reuse buffer (RB) size",
@@ -1220,8 +1235,11 @@ sim_reg_options(struct opt_odb_t *odb)
 	      &LVPT_size, /* default */1024,
 	      /* print */TRUE, /* format */NULL);
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   opt_reg_string(odb, "-fetch:policy |icount|round_robin|",
 	      "fetch policy",
 	      &fetch_policy, /* default */"icount",
@@ -1844,6 +1862,9 @@ sim_reg_stats(struct stat_sdb_t *sdb)   /* stats database */
 		   "total number of branches committed",
 		   &sim_num_branches, /* initial value */0, /* format */NULL);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 
   /* REUSABILITY RESULTS */
@@ -1882,8 +1903,11 @@ sim_reg_stats(struct stat_sdb_t *sdb)   /* stats database */
 		   "load prediction accuracy",
 		   "(n_correct_load_predictions * 100) / n_load_predictions", NULL);
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
@@ -2238,6 +2262,7 @@ struct ROB_entry {
 
   /* Wattch: values of source operands and result operand used for AF generation */
 <<<<<<< HEAD
+<<<<<<< HEAD
   qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
   
   int slip;
@@ -2251,6 +2276,15 @@ struct ROB_entry {
   int slip;
   int exec_lat;                         /* execution latency */
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+  qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
+  
+  int slip;
+  int exec_lat;                         /* execution latency */
+
+  bool_t no_exec;			/* added by A. Gellert to invalidate execution by the Reuse Buffer */
+
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   /* instruction status */
   int dispatched;
   int queued;				/* operands ready and queued */
@@ -3069,6 +3103,9 @@ commit(int context_id)
       }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 	    /****** Evaluating Instruction Reuse Degree ******/
 			 /******   DIV / MUL	******/	
@@ -3126,8 +3163,11 @@ commit(int context_id)
 	    }
 	}
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
       if (contexts[context_id].pred
 	  && bpred_spec_update == spec_CT
 	  && (MD_OP_FLAGS(rs->op) & F_CTRL))
@@ -3867,6 +3907,9 @@ selection(void)
 	  rs->queued = FALSE;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 	/* Identifying reusable MUL/DIV whose operands were not ready at REGISTER RENAME */
 	if ((MD_OP_FUCLASS(rs->op) != NA) && (MD_OP_FLAGS(rs->op) & F_ICOMP) && (!rs->no_exec))
@@ -3981,8 +4024,11 @@ selection(void)
 	        }
 	    }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 	  if (rs->in_LSQ
 	      && ((MD_OP_FLAGS(rs->op) & (F_MEM|F_STORE)) == (F_MEM|F_STORE)))
 	    {
@@ -4019,10 +4065,14 @@ selection(void)
 	    {
 	      /* issue the instruction to a functional unit */
 <<<<<<< HEAD
+<<<<<<< HEAD
 	      if (MD_OP_FUCLASS(rs->op) != NA && !rs->no_exec)
 =======
 	      if (MD_OP_FUCLASS(rs->op) != NA)
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+	      if (MD_OP_FUCLASS(rs->op) != NA && !rs->no_exec)
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 		{
 		  fu = res_get(fu_pool, MD_OP_FUCLASS(rs->op));
 		  if (fu)
@@ -4124,6 +4174,9 @@ selection(void)
 			  rs->exec_lat = load_lat;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 			/* 
  			 * Load Value Predictor evaluation.
@@ -4168,8 +4221,11 @@ selection(void)
 				else addToLVPT(LVPT_index, LVPT_Tag, rs->val_ra);
 			  }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 			  issue_exec_q_queue_event(rs, sim_cycle + ISSUE_EXEC_DELAY);
 			   
 			  if(rs->physreg >= 0){
@@ -4325,6 +4381,7 @@ selection(void)
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
 <<<<<<< HEAD
+<<<<<<< HEAD
 		    if(rs->no_exec) int_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
 		    else int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
 		    /* data will be on the bypass network when this instruction completes execution */
@@ -4335,11 +4392,19 @@ selection(void)
 		    /* data will be on the bypass network when this instruction completes execution */
 		    int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+		    if(rs->no_exec) int_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
+		    else int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    /* data will be on the bypass network when this instruction completes execution */
+		    if(rs->no_exec) int_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
+		    else int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 		    break;
 		    
 		  case REG_FP:
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
+<<<<<<< HEAD
 <<<<<<< HEAD
 		    if(rs->no_exec) fp_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
 		    else fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
@@ -4351,6 +4416,13 @@ selection(void)
 		    /* data will be on the bypass network when this instruction completes execution */
 		    fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+		    if(rs->no_exec) fp_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
+		    else fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    /* data will be on the bypass network when this instruction completes execution */
+		    if(rs->no_exec) fp_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
+		    else fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY; 
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 		    break;
 		    
 		  case REG_NONE:
@@ -5548,10 +5620,14 @@ register_rename(void)
 
   /* Wattch:  Added for pop count generation (AFs) */
 <<<<<<< HEAD
+<<<<<<< HEAD
   qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
 =======
   quad_t val_ra, val_rb, val_rc, val_ra_result;
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+  qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
   made_check = FALSE;
   n_renamed = 0;
@@ -5706,9 +5782,13 @@ register_rename(void)
       val_ra = GPR(RA);
       val_rb = GPR(RB);
 <<<<<<< HEAD
+<<<<<<< HEAD
       val_im = IMM;
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+      val_im = IMM;
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
       /* set default fault - none */
       fault = md_fault_none;
@@ -5848,9 +5928,13 @@ register_rename(void)
 	  rs = &contexts[disp_context_id].ROB[contexts[disp_context_id].ROB_tail];
           rs->slip = sim_cycle - 1;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	  rs->no_exec = FALSE;	/* added by A. Gellert */
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+	  rs->no_exec = FALSE;	/* added by A. Gellert */
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 	  rs->IR = inst;
 	  rs->op = op;
 	  rs->PC = regs->regs_PC;
@@ -5912,9 +5996,13 @@ register_rename(void)
 	  rs->val_rc = val_rc;
 	  rs->val_ra_result = val_ra_result;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	  rs->val_im = val_im;
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+	  rs->val_im = val_im;
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 
 	  /* split ld/st's into two operations: eff addr comp + mem access */
@@ -5928,9 +6016,13 @@ register_rename(void)
 	      lsq = &contexts[disp_context_id].LSQ[contexts[disp_context_id].LSQ_tail];
               lsq->slip = sim_cycle - 1;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	      lsq->no_exec = FALSE;	/* added by A. Gellert */
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+	      lsq->no_exec = FALSE;	/* added by A. Gellert */
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 	      lsq->IR = inst;
 	      lsq->op = op;
 	      lsq->PC = regs->regs_PC;
@@ -5969,9 +6061,13 @@ register_rename(void)
 	      lsq->val_rc = val_rc;
 	      lsq->val_ra_result = val_ra_result;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	      lsq->val_im = val_im;
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+	      lsq->val_im = val_im;
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 	      /* pipetrace this uop */
 	      ptrace_newuop(lsq->ptrace_seq, "internal ld/st", lsq->PC, 0);
@@ -5999,6 +6095,9 @@ register_rename(void)
 
 	    }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
 
 	    /****** Evaluating Instruction Reuse Degree ******/
@@ -6039,8 +6138,11 @@ register_rename(void)
 		    break;
 	        }
 	    }
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 	}
       else
 	{
@@ -6754,6 +6856,9 @@ sim_main(void)
 {
   int i;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
 
   /* computing the width of Reuse Buffer index */
   unsigned int RB_shift_width = RB_size-1;
@@ -6769,8 +6874,11 @@ sim_main(void)
 	LVPT_shift_width >>= 1;
   }
 
+<<<<<<< HEAD
 =======
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 5937f27 (Added files from Sv_Trivial_LVP_80nm_nthread)
   /* ignore any floating point exceptions, they may occur on mis-speculated
      execution paths */
   signal(SIGFPE, SIG_IGN);
