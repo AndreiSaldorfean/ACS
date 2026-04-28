@@ -103,7 +103,11 @@
  * To convert from 0.8um to 0.5um, make FUDGEFACTOR = 1.6
  */
  
+<<<<<<< HEAD
 #define FUDGEFACTOR 10.0
+=======
+#define FUDGEFACTOR 1.0
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
 /*===================================================================*/
 
@@ -530,12 +534,15 @@ typedef struct {
 
   double clock_power;
 
+<<<<<<< HEAD
   /* Added by A. Gellert for the Reuse Buffer (RB) */
   double rb_power;
 
   /* Added by A. Gellert for the LVPT */
   double lvpt_power;
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 } power_result_type;
 
 /* Used to pass values around the program */
@@ -587,5 +594,10 @@ void power_reg_stats(struct stat_sdb_t *sdb);/* stats database */
 void calculate_time(time_result_type*, time_parameter_type*);
 void output_data(time_result_type*, time_parameter_type*);
 void calculate_power(power_result_type*);
+<<<<<<< HEAD
 int pop_count(qword_t bits);
 int pop_count_slow(qword_t bits);
+=======
+int pop_count(quad_t bits);
+int pop_count_slow(quad_t bits);
+>>>>>>> 4abdfc7 (Added MSim V2.0)

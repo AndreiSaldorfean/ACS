@@ -113,6 +113,7 @@
  * pipeline operations.
  */
 
+<<<<<<< HEAD
 /* 
  * Instruction reuse scheme evaluation:
  * structures, variables and functions.
@@ -278,6 +279,8 @@ static counter_t n_load_predictions = 0;
 /* total number of correctly predicted (critical) loads */
 static counter_t n_correct_load_predictions = 0;
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
 /*
  * simulator options
@@ -506,10 +509,13 @@ counter_t regfile_num_pop_count_cycle=0;
 counter_t resultbus_total_pop_count_cycle=0;
 counter_t resultbus_num_pop_count_cycle=0;
 
+<<<<<<< HEAD
 /* added by A. Gellert for Wattch */
 counter_t rb_access = 0;
 counter_t lvpt_access = 0;
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 /* text-based stat profiles */
 #define MAX_PCSTAT_VARS 8
 static int pcstat_nelt = 0;
@@ -1201,6 +1207,7 @@ sim_reg_options(struct opt_odb_t *odb)
 	      &ROB_size, /* default */128,
 	      /* print */TRUE, /* format */NULL);
 
+<<<<<<< HEAD
   /* Reuse Buffer Size @ Arpad Gellert */
   opt_reg_int(odb, "-rb:size",
 	      "reuse buffer (RB) size",
@@ -1213,6 +1220,8 @@ sim_reg_options(struct opt_odb_t *odb)
 	      &LVPT_size, /* default */1024,
 	      /* print */TRUE, /* format */NULL);
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
   opt_reg_string(odb, "-fetch:policy |icount|round_robin|",
 	      "fetch policy",
 	      &fetch_policy, /* default */"icount",
@@ -1834,6 +1843,7 @@ sim_reg_stats(struct stat_sdb_t *sdb)   /* stats database */
   stat_reg_counter(sdb, "sim_num_branches",
 		   "total number of branches committed",
 		   &sim_num_branches, /* initial value */0, /* format */NULL);
+<<<<<<< HEAD
 
 
   /* REUSABILITY RESULTS */
@@ -1872,6 +1882,8 @@ sim_reg_stats(struct stat_sdb_t *sdb)   /* stats database */
 		   "load prediction accuracy",
 		   "(n_correct_load_predictions * 100) / n_load_predictions", NULL);
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
@@ -2225,6 +2237,7 @@ struct ROB_entry {
   unsigned int ptrace_seq;		/* pipetrace sequence number */
 
   /* Wattch: values of source operands and result operand used for AF generation */
+<<<<<<< HEAD
   qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
   
   int slip;
@@ -2232,6 +2245,12 @@ struct ROB_entry {
 
   bool_t no_exec;			/* added by A. Gellert to invalidate execution by the Reuse Buffer */
 
+=======
+  quad_t val_ra, val_rb, val_rc, val_ra_result;
+  
+  int slip;
+  int exec_lat;                         /* execution latency */
+>>>>>>> 4abdfc7 (Added MSim V2.0)
   /* instruction status */
   int dispatched;
   int queued;				/* operands ready and queued */
@@ -2942,7 +2961,11 @@ commit(int context_id)
 	  if((last_commit_cycle + COMMIT_TIMEOUT) <= sim_cycle){
 	    fprintf(stderr, "NOT COMLPETED: \n");
 	    md_print_insn(rs->IR, rs->PC, stderr);
+<<<<<<< HEAD
 	    fprintf(stderr, "\n %d %d\n", rs->dispatched, find_iq_entry());
+=======
+	    fprintf(stderr, "\n %d %d\n", rs->dispatched, find_iq_entry(2));
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 	  }
 	  break;
 	}
@@ -3045,6 +3068,7 @@ commit(int context_id)
 #endif
       }
 
+<<<<<<< HEAD
 
 	    /****** Evaluating Instruction Reuse Degree ******/
 			 /******   DIV / MUL	******/	
@@ -3102,6 +3126,8 @@ commit(int context_id)
 	    }
 	}
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
       if (contexts[context_id].pred
 	  && bpred_spec_update == spec_CT
 	  && (MD_OP_FLAGS(rs->op) & F_CTRL))
@@ -3840,6 +3866,7 @@ selection(void)
 	  /* node is now un-queued */
 	  rs->queued = FALSE;
 
+<<<<<<< HEAD
 
 	/* Identifying reusable MUL/DIV whose operands were not ready at REGISTER RENAME */
 	if ((MD_OP_FUCLASS(rs->op) != NA) && (MD_OP_FLAGS(rs->op) & F_ICOMP) && (!rs->no_exec))
@@ -3954,6 +3981,8 @@ selection(void)
 	        }
 	    }
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 	  if (rs->in_LSQ
 	      && ((MD_OP_FLAGS(rs->op) & (F_MEM|F_STORE)) == (F_MEM|F_STORE)))
 	    {
@@ -3989,7 +4018,11 @@ selection(void)
 	  else
 	    {
 	      /* issue the instruction to a functional unit */
+<<<<<<< HEAD
 	      if (MD_OP_FUCLASS(rs->op) != NA && !rs->no_exec)
+=======
+	      if (MD_OP_FUCLASS(rs->op) != NA)
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 		{
 		  fu = res_get(fu_pool, MD_OP_FUCLASS(rs->op));
 		  if (fu)
@@ -4090,6 +4123,7 @@ selection(void)
 			  /* use computed cache access latency */
 			  rs->exec_lat = load_lat;
 
+<<<<<<< HEAD
 
 			/* 
  			 * Load Value Predictor evaluation.
@@ -4134,6 +4168,8 @@ selection(void)
 				else addToLVPT(LVPT_index, LVPT_Tag, rs->val_ra);
 			  }
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 			  issue_exec_q_queue_event(rs, sim_cycle + ISSUE_EXEC_DELAY);
 			   
 			  if(rs->physreg >= 0){
@@ -4288,21 +4324,33 @@ selection(void)
 		  case REG_INT:
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
+<<<<<<< HEAD
 		    if(rs->no_exec) int_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
 		    else int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
 		    /* data will be on the bypass network when this instruction completes execution */
 		    if(rs->no_exec) int_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
 		    else int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+=======
+		    int_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    /* data will be on the bypass network when this instruction completes execution */
+		    int_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 		    break;
 		    
 		  case REG_FP:
 		    assert(rs->physreg >= 0);
 		    /* earliest cycle dependents should wakeup */
+<<<<<<< HEAD
 		    if(rs->no_exec) fp_reg_file[rs->physreg].spec_ready = sim_cycle + 1; // A. Gellert 
 		    else fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
 		    /* data will be on the bypass network when this instruction completes execution */
 		    if(rs->no_exec) fp_reg_file[rs->physreg].ready = sim_cycle + 1 + ISSUE_EXEC_DELAY; // A. Gellert 
 		    else fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY; 
+=======
+		    fp_reg_file[rs->physreg].spec_ready = sim_cycle + rs->exec_lat;
+		    /* data will be on the bypass network when this instruction completes execution */
+		    fp_reg_file[rs->physreg].ready = sim_cycle + rs->exec_lat + ISSUE_EXEC_DELAY;
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 		    break;
 		    
 		  case REG_NONE:
@@ -5499,7 +5547,11 @@ register_rename(void)
   int spec_mode = contexts[disp_context_id].spec_mode; /* indicates if the current context is in speculative mode */
 
   /* Wattch:  Added for pop count generation (AFs) */
+<<<<<<< HEAD
   qword_t val_ra, val_rb, val_rc, val_ra_result, val_im;
+=======
+  quad_t val_ra, val_rb, val_rc, val_ra_result;
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
   made_check = FALSE;
   n_renamed = 0;
@@ -5653,7 +5705,10 @@ register_rename(void)
       /* Wattch: Get values of source operands */
       val_ra = GPR(RA);
       val_rb = GPR(RB);
+<<<<<<< HEAD
       val_im = IMM;
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
       /* set default fault - none */
       fault = md_fault_none;
@@ -5792,7 +5847,10 @@ register_rename(void)
 	  /* fill in ROB entry */
 	  rs = &contexts[disp_context_id].ROB[contexts[disp_context_id].ROB_tail];
           rs->slip = sim_cycle - 1;
+<<<<<<< HEAD
 	  rs->no_exec = FALSE;	/* added by A. Gellert */
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 	  rs->IR = inst;
 	  rs->op = op;
 	  rs->PC = regs->regs_PC;
@@ -5853,7 +5911,10 @@ register_rename(void)
 	  rs->val_rb = val_rb;
 	  rs->val_rc = val_rc;
 	  rs->val_ra_result = val_ra_result;
+<<<<<<< HEAD
 	  rs->val_im = val_im;
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
 
 	  /* split ld/st's into two operations: eff addr comp + mem access */
@@ -5866,7 +5927,10 @@ register_rename(void)
 	      /* fill in LSQ entry */
 	      lsq = &contexts[disp_context_id].LSQ[contexts[disp_context_id].LSQ_tail];
               lsq->slip = sim_cycle - 1;
+<<<<<<< HEAD
 	      lsq->no_exec = FALSE;	/* added by A. Gellert */
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 	      lsq->IR = inst;
 	      lsq->op = op;
 	      lsq->PC = regs->regs_PC;
@@ -5904,7 +5968,10 @@ register_rename(void)
 	      lsq->val_rb = val_rb;
 	      lsq->val_rc = val_rc;
 	      lsq->val_ra_result = val_ra_result;
+<<<<<<< HEAD
 	      lsq->val_im = val_im;
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 
 	      /* pipetrace this uop */
 	      ptrace_newuop(lsq->ptrace_seq, "internal ld/st", lsq->PC, 0);
@@ -5931,6 +5998,7 @@ register_rename(void)
 	      contexts[disp_context_id].ROB_num++;
 
 	    }
+<<<<<<< HEAD
 
 
 	    /****** Evaluating Instruction Reuse Degree ******/
@@ -5971,6 +6039,8 @@ register_rename(void)
 		    break;
 	        }
 	    }
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 	}
       else
 	{
@@ -6683,6 +6753,7 @@ void
 sim_main(void)
 {
   int i;
+<<<<<<< HEAD
 
   /* computing the width of Reuse Buffer index */
   unsigned int RB_shift_width = RB_size-1;
@@ -6698,6 +6769,8 @@ sim_main(void)
 	LVPT_shift_width >>= 1;
   }
 
+=======
+>>>>>>> 4abdfc7 (Added MSim V2.0)
   /* ignore any floating point exceptions, they may occur on mis-speculated
      execution paths */
   signal(SIGFPE, SIG_IGN);

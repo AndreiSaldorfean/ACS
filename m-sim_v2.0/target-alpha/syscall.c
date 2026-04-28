@@ -180,7 +180,11 @@ int getdirentries(int fd, char *buf, int nbytes, long *basep);
 #include <sys/ioctl_compat.h>
 #else
 #ifndef _MSC_VER
+<<<<<<< HEAD
 #include <termios.h>
+=======
+#include <termio.h>
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 #endif
 #endif
 

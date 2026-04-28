@@ -262,7 +262,11 @@ FFLAGS = -DDEBUG
 # should indicate where the include and library directories reside.
 # NOTE: these definitions are only required if BFD_LOADER is defined.
 #
+<<<<<<< HEAD
 # BINUTILS_INC = -I/usr/lib/zig0.14/lib/libc/include/generic-glibc
+=======
+#BINUTILS_INC = -I../include
+>>>>>>> 4abdfc7 (Added MSim V2.0)
 #BINUTILS_LIB = -L../lib
 
 #
