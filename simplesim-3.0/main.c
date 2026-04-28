@@ -109,13 +109,9 @@
 #ifdef BFD_LOADER
 #include <bfd.h>
 #endif /* BFD_LOADER */
-
 #include "host.h"
 #include "misc.h"
 #include "machine.h"
-#include "endian.h"
-#include "version.h"
-#include "dlite.h"
 #include "options.h"
 #include "stats.h"
 #include "loader.h"
@@ -205,20 +201,6 @@ orphan_fn(int i, int argc, char **argv)
 }
 
 static void
-banner(FILE *fd, int argc, char **argv)
-{
-  char *s;
-
-  fprintf(fd,
-	  "%s: SimpleScalar/%s Tool Set version %d.%d of %s.\n"
-	  "Copyright (c) 1994-2000 by Todd M. Austin.  All Rights Reserved.\n"
-	  "This version of SimpleScalar is licensed for academic non-commercial use only.\n"
-	  "\n",
-	  ((s = strrchr(argv[0], '/')) ? s+1 : argv[0]),
-	  VER_TARGET, VER_MAJOR, VER_MINOR, VER_UPDATE);
-}
-
-static void
 usage(FILE *fd, int argc, char **argv)
 {
   fprintf(fd, "Usage: %s {-options} executable {arguments}\n", argv[0]);
@@ -302,8 +284,6 @@ main(int argc, char **argv, char **envp)
   opt_reg_flag(sim_odb, "-d", "enable debug message",
 	       &debugging, /* default */FALSE, /* !print */FALSE, NULL);
 #endif /* DEBUG */
-  opt_reg_flag(sim_odb, "-i", "start in Dlite debugger",
-	       &dlite_active, /* default */FALSE, /* !print */FALSE, NULL);
   opt_reg_int(sim_odb, "-seed",
 	      "random number generator seed (0 for timer seed)",
 	      &rand_seed, /* default */1, /* print */TRUE, NULL);
@@ -357,14 +337,10 @@ main(int argc, char **argv, char **envp)
   /* need at least two argv values to run */
   if (argc < 2)
     {
-      banner(stderr, argc, argv);
       usage(stderr, argc, argv);
       exit(1);
     }
-
-  /* opening banner */
-  banner(stderr, argc, argv);
-
+  
   if (help_me)
     {
       /* print help message and exit */
