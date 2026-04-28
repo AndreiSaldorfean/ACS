@@ -72,18 +72,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "host.h"
-#include "misc.h"
 #include "machine.h"
-#include "regs.h"
-#include "memory.h"
 #include "loader.h"
-#include "syscall.h"
-#include "dlite.h"
+#include "system_calls.h"
 #include "options.h"
-#include "stats.h"
-#include "bpred.h"
-#include "sim.h"
+
 
 /*
  * This file implements a branch predictor analyzer.

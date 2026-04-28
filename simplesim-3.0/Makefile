@@ -361,7 +361,8 @@ HDRS =	syscall.h memory.h regs.h sim.h loader.h cache.h LVPred.h ptrace.h \
 	eio.h range.h version.h endian.h misc.h \
 	target-pisa/pisa.h target-pisa/pisabig.h target-pisa/pisalittle.h \
 	target-pisa/pisa.def target-pisa/ecoff.h \
-	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h 
+	target-alpha/alpha.h target-alpha/alpha.def target-alpha/ecoff.h \
+	performance_core.h system_calls
 
 #
 # common objects

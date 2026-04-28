@@ -82,17 +82,10 @@
 #include <unistd.h>
 #endif
 
-#include "host.h"
-#include "misc.h"
-#include "machine.h"
-#include "regs.h"
-#include "memory.h"
-#include "loader.h"
+#include "eio.h"
 #include "libexo/libexo.h"
 #include "syscall.h"
-#include "sim.h"
-#include "endian.h"
-#include "eio.h"
+
 
 #ifdef _MSC_VER
 #define write		_write

@@ -86,8 +86,6 @@
 #include <sys/time.h>
 #endif
 
-#include "host.h"
-#include "misc.h"
 #include "machine.h"
 
 /*

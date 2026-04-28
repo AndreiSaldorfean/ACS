@@ -67,6 +67,7 @@
 #define EIO_H
 
 #include <stdio.h>
+#include "performance_core.h"
 
 /* EIO file formats */
 #define EIO_PISA_FORMAT			1
