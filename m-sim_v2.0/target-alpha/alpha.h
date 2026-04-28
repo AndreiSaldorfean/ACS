@@ -222,9 +222,12 @@ extern md_inst_t MD_NOP_INST;
 
 /* internal decoder state */
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 /*extern enum md_opcode md_mask2op[];*/
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+>>>>>>> 7e73b98 (Fixed MSim build phase)
 extern unsigned int md_opoffset[];
 extern unsigned int md_opmask[];
 extern unsigned int md_opshift[];
@@ -238,12 +241,18 @@ enum md_opcode {
 #include "machine.def"
   OP_MAX	/* number of opcodes + NA */
 <<<<<<< HEAD
+<<<<<<< HEAD
 };
 
 extern enum md_opcode md_mask2op[];
 =======
 }md_mask2op[];
 >>>>>>> 4abdfc7 (Added MSim V2.0)
+=======
+};
+
+extern enum md_opcode md_mask2op[];
+>>>>>>> 7e73b98 (Fixed MSim build phase)
 
 /* enum md_opcode -> description string */
 #define MD_OP_NAME(OP)		(md_op2name[OP])
