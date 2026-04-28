@@ -10,6 +10,5 @@
 #include "memory.h"
 #include "dlite.h"
 #include "stats.h"
-#include "endian.h"
 
 #endif
