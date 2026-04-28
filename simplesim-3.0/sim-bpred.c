@@ -73,7 +73,6 @@
 #include <math.h>
 
 #include "machine.h"
-#include "loader.h"
 #include "system_calls.h"
 #include "options.h"
 

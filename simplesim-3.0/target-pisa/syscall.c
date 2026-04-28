@@ -99,13 +99,8 @@
 #include "host.h"
 #include "misc.h"
 #include "machine.h"
-#include "regs.h"
-#include "memory.h"
-#include "loader.h"
-#include "sim.h"
-#include "endian.h"
-#include "eio.h"
-#include "syscall.h"
+#include "performance_core.h"
+#include "system_calls.h"
 
 /* live execution only support on same-endian hosts... */
 #ifndef MD_CROSS_ENDIAN

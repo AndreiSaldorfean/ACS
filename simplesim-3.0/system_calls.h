@@ -1,7 +1,7 @@
 #ifndef SYSTEMCALLS
 #define SYSTEMCALLS
 
-#include "syscall.h"
 #include "eio.h"
+#include "syscall.h"
 
 #endif
