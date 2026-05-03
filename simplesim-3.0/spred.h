@@ -161,6 +161,9 @@ struct location
   md_addr_t addr;
   addrList nextAddress;
   valueList values;
+  char op_name[8];  /* instruction mnemonic: "jr" or "jalr" */
+  int in_reg;       /* source register number (in1) */
+  int out_reg;      /* link register number (out1), 0 for jr */
 };
 
 //PPM
@@ -204,7 +207,7 @@ int foundValue_INDIR(addrList l, sword_t value, int history);
 int foundAddress_INDIR(addrList l, md_addr_t addr, sword_t value, int history);
 
 void aritate_Address(addrList l);
-addrList pushAddress(addrList p, md_addr_t addr, sword_t value);
+addrList pushAddress(addrList p, md_addr_t addr, sword_t value, const char *op_name, int in_reg, int out_reg);
 void pushValue(addrList p, sword_t value);
 int foundValue(addrList l, sword_t value, int history, int distinct);
 int foundAddress(addrList l, md_addr_t addr, sword_t value, int history, int distinct);

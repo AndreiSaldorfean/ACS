@@ -562,6 +562,13 @@ sim_uninit(void)
 /* system call handler macro */
 #define SYSCALL(INST)	sys_syscall(&regs, mem_access, mem, INST, TRUE)
 
+/* called at program exit (via atexit) to print indirect jump arity stats */
+static void finalize_stats(void)
+{
+  if (predict == 0 && l_INDIR != NULL)
+    aritate_Address(l_INDIR);
+}
+
 /* start simulation, program loaded, processor precise state initialized */
 void
 sim_main(void)
@@ -595,6 +602,7 @@ int out1, out2;
   wpredicted = 0;
 
   fprintf(stderr, "sim: ** starting functional simulation w/ predictors **\n");
+  atexit(finalize_stats);
  l = NULL;
   l_INDIR = news();
   l_CTRL = news();
@@ -707,15 +715,15 @@ int out1, out2;
 
 			if(l_INDIR == NULL)
 			{
-				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1]);
+				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1],
+				                      MD_OP_NAME(op), in1, out1);
 				nr_salturi_statice_indir++;
-				fprintf(stderr, "\n PC: %x op: %d %-10s in1: %d in2: %d out1: %d\n",regs.regs_PC,op,MD_OP_NAME(op),in1,in2,out1);
 			}
 			else if(!foundAddress_INDIR(l_INDIR, regs.regs_PC, regs.regs_R[in1], history))
 			{
-				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1]);
+				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1],
+				                      MD_OP_NAME(op), in1, out1);
 				nr_salturi_statice_indir++;
-		        fprintf(stderr, "\n PC: %x op: %d %-10s in1: %d in2: %d out1: %d\n",regs.regs_PC,op,MD_OP_NAME(op),in1,in2,out1);		
 			}	
 		}
 	}
@@ -726,12 +734,12 @@ int out1, out2;
 	  sim_num_jumps++;
 	  if(l_CTRL == NULL)
 	  {
-		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1]);
+		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1], "", 0, 0);
 		nr_salturi_statice++;
 	  }
 	  else if(!foundAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1],history, predict))
 	  {
-		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1]);
+		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1], "", 0, 0);
 		nr_salturi_statice++;
 	  } 
     }
@@ -793,10 +801,7 @@ int out1, out2;
 
       /* finish early? */
       if (max_insts && sim_num_insn >= max_insts)
-      {
-	aritate_Address(l_INDIR);
 	return;
-      }
 
 	//return;
     }

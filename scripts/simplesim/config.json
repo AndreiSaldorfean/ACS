@@ -1,137 +1,14 @@
 {
-    "applu": {
+    "hydro2d": {
         "simulators": {
             "spred": [
                 {
-                    "cfg0": "-pred 1 -assoc 0 -lvpt 16",
-                    "cfg1": "-pred 1 -assoc 0 -lvpt 32",
-                    "cfg2": "-pred 1 -assoc 0 -lvpt 64",
-                    "cfg3": "-pred 1 -assoc 0 -lvpt 128",
-                    "cfg4": "-pred 1 -assoc 0 -lvpt 256",
-                    "cfg5": "-pred 1 -assoc 0 -lvpt 512",
-                    "cfg6": "-pred 1 -assoc 0 -lvpt 1024",
-                    "cfg7": "-pred 1 -assoc 0 -lvpt 2048",
-                    "cfg8": "-pred 1 -assoc 1 -lvpt 16",
-                    "cfg9": "-pred 1 -assoc 1 -lvpt 32",
-                    "cfg10": "-pred 1 -assoc 1 -lvpt 64",
-                    "cfg11": "-pred 1 -assoc 1 -lvpt 128",
-                    "cfg12": "-pred 1 -assoc 1 -lvpt 256",
-                    "cfg13": "-pred 1 -assoc 1 -lvpt 512",
-                    "cfg14": "-pred 1 -assoc 1 -lvpt 1024",
-                    "cfg15": "-pred 1 -assoc 1 -lvpt 2048"
+                    "abc": "-pred 0 -jvpt 256 -contextual 1 -history 32 -pattern 1"
                 }
             ]
         },
-        "executable_file": "../../inputs/ss_files/applu.ss",
-        "input": "< ../../inputs/in_files/applu.in",
-        "max_instructions": 20000000
-    },
-    "cc1": {
-        "simulators": {
-            "spred": [
-                {
-                    "cfg0": "-pred 1 -assoc 0 -lvpt 16",
-                    "cfg1": "-pred 1 -assoc 0 -lvpt 32",
-                    "cfg2": "-pred 1 -assoc 0 -lvpt 64",
-                    "cfg3": "-pred 1 -assoc 0 -lvpt 128",
-                    "cfg4": "-pred 1 -assoc 0 -lvpt 256",
-                    "cfg5": "-pred 1 -assoc 0 -lvpt 512",
-                    "cfg6": "-pred 1 -assoc 0 -lvpt 1024",
-                    "cfg7": "-pred 1 -assoc 0 -lvpt 2048",
-                    "cfg8": "-pred 1 -assoc 1 -lvpt 16",
-                    "cfg9": "-pred 1 -assoc 1 -lvpt 32",
-                    "cfg10": "-pred 1 -assoc 1 -lvpt 64",
-                    "cfg11": "-pred 1 -assoc 1 -lvpt 128",
-                    "cfg12": "-pred 1 -assoc 1 -lvpt 256",
-                    "cfg13": "-pred 1 -assoc 1 -lvpt 512",
-                    "cfg14": "-pred 1 -assoc 1 -lvpt 1024",
-                    "cfg15": "-pred 1 -assoc 1 -lvpt 2048"
-                }
-            ]
-        },
-        "executable_file": "../../inputs/ss_files/cc1.ss",
-        "input": "< ../../inputs/in_files/1stmt.i",
-        "max_instructions": 20000000
-    },
-    "compress": {
-        "simulators": {
-            "spred": [
-                {
-                    "cfg0": "-pred 1 -assoc 0 -lvpt 16",
-                    "cfg1": "-pred 1 -assoc 0 -lvpt 32",
-                    "cfg2": "-pred 1 -assoc 0 -lvpt 64",
-                    "cfg3": "-pred 1 -assoc 0 -lvpt 128",
-                    "cfg4": "-pred 1 -assoc 0 -lvpt 256",
-                    "cfg5": "-pred 1 -assoc 0 -lvpt 512",
-                    "cfg6": "-pred 1 -assoc 0 -lvpt 1024",
-                    "cfg7": "-pred 1 -assoc 0 -lvpt 2048",
-                    "cfg8": "-pred 1 -assoc 1 -lvpt 16",
-                    "cfg9": "-pred 1 -assoc 1 -lvpt 32",
-                    "cfg10": "-pred 1 -assoc 1 -lvpt 64",
-                    "cfg11": "-pred 1 -assoc 1 -lvpt 128",
-                    "cfg12": "-pred 1 -assoc 1 -lvpt 256",
-                    "cfg13": "-pred 1 -assoc 1 -lvpt 512",
-                    "cfg14": "-pred 1 -assoc 1 -lvpt 1024",
-                    "cfg15": "-pred 1 -assoc 1 -lvpt 2048"
-                }
-            ]
-        },
-        "executable_file": "../../inputs/ss_files/compress95.ss",
-        "input": "-nice 1 < ../../inputs/in_files/applu.in",
-        "max_instructions": 20000000
-    },
-    "ijpeg": {
-        "simulators": {
-            "spred": [
-                {
-                    "cfg0": "-pred 1 -assoc 0 -lvpt 16",
-                    "cfg1": "-pred 1 -assoc 0 -lvpt 32",
-                    "cfg2": "-pred 1 -assoc 0 -lvpt 64",
-                    "cfg3": "-pred 1 -assoc 0 -lvpt 128",
-                    "cfg4": "-pred 1 -assoc 0 -lvpt 256",
-                    "cfg5": "-pred 1 -assoc 0 -lvpt 512",
-                    "cfg6": "-pred 1 -assoc 0 -lvpt 1024",
-                    "cfg7": "-pred 1 -assoc 0 -lvpt 2048",
-                    "cfg8": "-pred 1 -assoc 1 -lvpt 16",
-                    "cfg9": "-pred 1 -assoc 1 -lvpt 32",
-                    "cfg10": "-pred 1 -assoc 1 -lvpt 64",
-                    "cfg11": "-pred 1 -assoc 1 -lvpt 128",
-                    "cfg12": "-pred 1 -assoc 1 -lvpt 256",
-                    "cfg13": "-pred 1 -assoc 1 -lvpt 512",
-                    "cfg14": "-pred 1 -assoc 1 -lvpt 1024",
-                    "cfg15": "-pred 1 -assoc 1 -lvpt 2048"
-                }
-            ]
-        },
-        "executable_file": "../../inputs/ss_files/ijpeg.ss",
-        "input": "< ../../inputs/in_files/vigo.ppm",
-        "max_instructions": 20000000
-    },
-    "mgrid": {
-        "simulators": {
-            "spred": [
-                {
-                    "cfg0": "-pred 1 -assoc 0 -lvpt 16",
-                    "cfg1": "-pred 1 -assoc 0 -lvpt 32",
-                    "cfg2": "-pred 1 -assoc 0 -lvpt 64",
-                    "cfg3": "-pred 1 -assoc 0 -lvpt 128",
-                    "cfg4": "-pred 1 -assoc 0 -lvpt 256",
-                    "cfg5": "-pred 1 -assoc 0 -lvpt 512",
-                    "cfg6": "-pred 1 -assoc 0 -lvpt 1024",
-                    "cfg7": "-pred 1 -assoc 0 -lvpt 2048",
-                    "cfg8": "-pred 1 -assoc 1 -lvpt 16",
-                    "cfg9": "-pred 1 -assoc 1 -lvpt 32",
-                    "cfg10": "-pred 1 -assoc 1 -lvpt 64",
-                    "cfg11": "-pred 1 -assoc 1 -lvpt 128",
-                    "cfg12": "-pred 1 -assoc 1 -lvpt 256",
-                    "cfg13": "-pred 1 -assoc 1 -lvpt 512",
-                    "cfg14": "-pred 1 -assoc 1 -lvpt 1024",
-                    "cfg15": "-pred 1 -assoc 1 -lvpt 2048"
-                }
-            ]
-        },
-        "executable_file": "../../inputs/ss_files/mgrid.ss",
-        "input": "-nice 1 < ../../inputs/in_files/mgrid.in",
-        "max_instructions": 20000000
+        "executable_file": "../../inputs/ss_files/hydro2d.ss",
+        "input": "< ../../inputs/in_files/hydro2d.in",
+        "max_instructions": 50000000
     }
 }

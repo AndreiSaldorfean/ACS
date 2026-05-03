@@ -123,6 +123,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include <string.h>
 #include "host.h"
 #include "misc.h"
 #include "machine.h"
@@ -132,13 +133,17 @@ addrList news()
   return NULL;
 }
 
-addrList pushAddress(addrList p, md_addr_t addr, sword_t value)
+addrList pushAddress(addrList p, md_addr_t addr, sword_t value, const char *op_name, int in_reg, int out_reg)
 {
   addrList q;
   valueList r;
   q=(addrList)malloc(sizeof(struct location));
   q->addr=addr;
   q->nextAddress=p;
+  strncpy(q->op_name, op_name ? op_name : "", 7);
+  q->op_name[7] = '\0';
+  q->in_reg = in_reg;
+  q->out_reg = out_reg;
   r=(valueList)malloc(sizeof(struct element));
   r->value=value;
   r->freq = 1;
@@ -653,46 +658,56 @@ void aritate_Address(addrList l)
   addrList p = l;
   valueList q;
   long monomorfe_s = 0,duomorfe_s = 0,polimorfe_s = 0,i,suma_verif = 0;
-  long monomorfe_d = 0,duomorfe_d = 0,polimorfe_d = 0,temp_m, temp_d=0, temp_p=0;
+  long monomorfe_d = 0,duomorfe_d = 0,polimorfe_d = 0,temp_m;
 
-  while(p!=NULL)	
+  while(p!=NULL)
   {
 	q = p->values;
 	i = 0;
 	temp_m=0;
-    fprintf(stderr,"\nAlt__PC 0x%x \n",p->addr);
+
+	/* Print PC line with op and register(s) */
+	if(p->out_reg != 0)
+	  fprintf(stderr,"\nPC: 0x%x %s $%d, $%d\n",
+		  p->addr, p->op_name, p->in_reg, p->out_reg);
+	else
+	  fprintf(stderr,"\nPC: 0x%x %s $%d\n",
+		  p->addr, p->op_name, p->in_reg);
+
+	/* Print each target with its frequency */
 	while(q!=NULL)
 	{
-
-		suma_verif+=q->freq;
 		i++;
-		fprintf(stderr,"i=%ld Target 0x%x  freq = %d\n",i,q->value,q->freq);
+		suma_verif+=q->freq;
 		temp_m+=q->freq;
+		fprintf(stderr,"Target%ld = 0x%x freq = %d\n",i,(unsigned int)q->value,q->freq);
 		q = q->nextValue;
 	}
- 	if(i==0)
-		printf("Prostie");
+
+	if(i==0)
+		fprintf(stderr,"(no targets recorded)\n");
+	else if(i==1)
+	{
+		monomorfe_s++;
+		monomorfe_d+=temp_m;
+	}
+	else if(i==2)
+	{
+		duomorfe_s++;
+		duomorfe_d+=temp_m;
+	}
 	else
-		if(i==1)
-		{
-			monomorfe_s++;
-			monomorfe_d+=temp_m;
-		}
-		else
-			if(i==2)
-			{
-				duomorfe_d+=temp_m;
-				duomorfe_s++;
-			}
-			else
-			{
-				polimorfe_s++;
-				polimorfe_d+=temp_m;
-			}
+	{
+		polimorfe_s++;
+		polimorfe_d+=temp_m;
+	}
 	p = p->nextAddress;
   }
-  fprintf(stderr,"monomorfe_s %d duomorfe_s %d polimorfe_s %d \n suma verificare %d",monomorfe_s,duomorfe_s,polimorfe_s,suma_verif);
-  fprintf(stderr,"monomorfe_d %d duomorfe_d %d polimorfe_d %d ",monomorfe_d,duomorfe_d,polimorfe_d);
+  fprintf(stderr,"\nmonomorfe_s %ld duomorfe_s %ld polimorfe_s %ld\n",
+	  monomorfe_s,duomorfe_s,polimorfe_s);
+  fprintf(stderr,"suma_verif %ld\n",suma_verif);
+  fprintf(stderr,"monomorfe_d %ld duomorfe_d %ld polimorfe_d %ld\n",
+	  monomorfe_d,duomorfe_d,polimorfe_d);
 }
 
 /*****/
