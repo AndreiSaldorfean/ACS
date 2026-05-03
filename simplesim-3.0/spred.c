@@ -3,21 +3,21 @@
  *
  * This file is a part of the SimpleScalar tool suite written by
  * Todd M. Austin as a part of the Multiscalar Research Project.
- *  
+ *
  * The tool suite is currently maintained by Doug Burger and Todd M. Austin.
- * 
+ *
  * Copyright (C) 1994, 1995, 1996, 1997, 1998 by Todd M. Austin
  *
  * This source file is distributed "as is" in the hope that it will be
  * useful.  The tool set comes with no warranty, and no author or
  * distributor accepts any responsibility for the consequences of its
- * use. 
- * 
+ * use.
+ *
  * Everyone is granted permission to copy, modify and redistribute
  * this tool set under the following conditions:
- * 
- *    This source code is distributed for non-commercial use only. 
- *    Please contact the maintainer for restrictions applying to 
+ *
+ *    This source code is distributed for non-commercial use only.
+ *    Please contact the maintainer for restrictions applying to
  *    commercial use.
  *
  *    Permission is granted to anyone to make or distribute copies
@@ -166,7 +166,7 @@ int foundValue(addrList l, sword_t value, int history, int distinct)
 {
   int found = 0;
   int i;
-  valueList q = l->values;	
+  valueList q = l->values;
   valueList p = q->nextValue;
   if(q->value == value)
   {
@@ -235,7 +235,7 @@ int foundAddress(addrList l, md_addr_t addr, sword_t value, int history, int dis
     p=p->nextAddress;
   }
   return found;
-}	
+}
 
 JVPTaddrList pushJVPTAddress(JVPTaddrList p, md_addr_t addr)
 {
@@ -251,7 +251,7 @@ JVPTaddrList pushJVPTAddress(JVPTaddrList p, md_addr_t addr)
 void insertJVPTValue(JVPTaddrList ad, sword_t value, int history, int contextual)
 {
   int i;
-  JVPTvalueList q = ad->values;	
+  JVPTvalueList q = ad->values;
   JVPTvalueList p;
   JVPTvalueList newValue;
   if(!contextual || contextual == 2)	// stride or hybrid predictor
@@ -267,9 +267,9 @@ void insertJVPTValue(JVPTaddrList ad, sword_t value, int history, int contextual
 	  if(ad->values != NULL)
 	  {
 			q->value = value;
-			return;	
+			return;
 	  }
-  } 
+  }
   else if(q != NULL)
   {
 	p = q->nextValue;
@@ -285,11 +285,11 @@ void insertJVPTValue(JVPTaddrList ad, sword_t value, int history, int contextual
 	  p=p->nextValue;
 	  q=q->nextValue;
 	}
-  }	
+  }
   newValue=(JVPTvalueList)malloc(sizeof(struct JVPTelement));
   newValue->value=value;
   newValue->nextValue=ad->values;
-  ad->values=newValue;  	
+  ad->values=newValue;
 }
 
 sword_t maxValue(JVPTvalueList p)
@@ -343,10 +343,10 @@ sword_t predictValue(JVPTaddrList p, int history, int contextual, int pattern)
 							break;
 						}
 					}
-					else 
+					else
 					{
 						isPattern = 0;
-						break;					
+						break;
 					}
 					k = k->nextValue;
 					patternValues = patternValues->nextValue;
@@ -416,7 +416,7 @@ int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPT
 {
 
   JVPTaddrList p = *jvpt;
-  JVPTaddrList q; 
+  JVPTaddrList q;
   int i;
   int found = 0;
   if(*jvpt == NULL)
@@ -436,7 +436,7 @@ int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPT
 				}
 				if(p->automat == 0 || p->automat == 1) /* unpredictable */
 					classifiedUnpred++;
-				if(p->automat < 3) 
+				if(p->automat < 3)
 					p->automat++;
 			}
 			else
@@ -459,7 +459,7 @@ int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPT
 		}
 		insertJVPTValue(p, value, history, contextual);
 		return found;
-  }  
+  }
   else
   {
 	q = p->nextAddress;
@@ -477,11 +477,11 @@ int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPT
 					{
 						valuePrediction++;
 						classifiedPred++;
-						predictable++; 
+						predictable++;
 					}
 					if(q->automat == 0 || q->automat == 1) /* unpredictable */
 						classifiedUnpred++;
-					if(q->automat < 3) 
+					if(q->automat < 3)
 						q->automat++;
 				}
 				else
@@ -500,7 +500,7 @@ int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPT
 			else
 			{
 				if(q->automat > 0)
-					q->automat--;				
+					q->automat--;
 			}
 			insertJVPTValue(q, value, history, contextual);
 			/* the address is moved to the first position in the list */
@@ -545,11 +545,13 @@ void insertIntoDirrectMappedJVPT(md_addr_t addr, sword_t value, int history, JVP
 	{
 		if(p->addr != addr)
 		{
+			int was_uninit = (p->addr == 0);  /* uninitialized slot from JVPTinit */
 			p->addr = addr;
 			q = p->values;
 			p->values = NULL;
 			freeValueList(&q);
-			p->automat = 0;
+			if(!was_uninit)  /* reset automat only on real conflict, not first use */
+				p->automat = 0;
 		}
 		if(p->values != NULL)
 		{
@@ -563,7 +565,7 @@ void insertIntoDirrectMappedJVPT(md_addr_t addr, sword_t value, int history, JVP
 				}
 				if(p->automat == 0 || p->automat == 1) /* unpredictable */
 					classifiedUnpred++;
-				if(p->automat < 3) 
+				if(p->automat < 3)
 					p->automat++;
 			}
 			else
@@ -574,13 +576,13 @@ void insertIntoDirrectMappedJVPT(md_addr_t addr, sword_t value, int history, JVP
 				{
 					classifiedUnpred++;
 					wpredicted++;
-				}				
+				}
 				if(p->automat > 0)
 					p->automat--;
 			}
 		}
 		else
-		{			
+		{
 			if(p->automat > 0)
 				p->automat--;
 		}
@@ -613,7 +615,7 @@ int foundValue_INDIR(addrList l, sword_t value, int history)
 {
   int found = 0;
   int i;
-  valueList q = l->values;	
+  valueList q = l->values;
   valueList p = q->nextValue;
   if(q->value == value)
   {
@@ -635,12 +637,12 @@ int foundValue_INDIR(addrList l, sword_t value, int history)
 	  if(p->value == value)
 	  {
 	    if(!found)
-	    {	
+	    {
 	     found = 1;
 	     INDIRValueLocality ++;
 		 p->freq++;
 		 break;
-	    } 
+	    }
 	  }
 	  /*if(i == history-1)
 	  {
@@ -754,19 +756,19 @@ IVPTCache pushIVPTCacheLocation(IVPTCache p)
 void insertIVPTValue(IVPTCache ad, md_addr_t addr,md_addr_t tag, int nposcache)
 {
   int i;
-  IVPTValueList q = ad->valueList;	
+  IVPTValueList q = ad->valueList;
   IVPTValueList p;
   IVPTValueList newValue;
   if(nposcache == 1)
   {
 	  if(ad->valueList != NULL)
-	  {		  
+	  {
 		  q->addr = addr;
 		  q->tag = tag;
-		  return;	
+		  return;
 	  }
   }
-  
+
   else if(q != NULL)
   {
 	p = q->nextPos;
@@ -790,12 +792,12 @@ void insertIVPTValue(IVPTCache ad, md_addr_t addr,md_addr_t tag, int nposcache)
 	}
 
   }
-	
+
   newValue=(IVPTValueList)malloc(sizeof(struct IVPTelement));
   newValue->addr = addr;
   newValue->tag = tag;
   newValue->nextPos=ad->valueList;
-  ad->valueList = newValue;  	
+  ad->valueList = newValue;
 
 }
 
@@ -809,7 +811,7 @@ sword_t TCPredictValue(IVPTCache p,md_addr_t tag ,int nposcache)
 			return q->addr;
 		else
 			return -1;
-	else if(nposcache > 1 && q != NULL)	
+	else if(nposcache > 1 && q != NULL)
 	{
 		for(i=0; i<nposcache; i++)
 		{
@@ -818,7 +820,7 @@ sword_t TCPredictValue(IVPTCache p,md_addr_t tag ,int nposcache)
 
 			if(tag == q->tag)
 				return q->addr;
-				
+
 			q = q->nextPos;
 		}
 		return -1;
@@ -852,12 +854,12 @@ void insertIntoDirrectMappedTargetCache(md_addr_t addr, md_addr_t tag, int index
 			else
 			{
 				insertIVPTValue(p, addr, tag, nposcache);
-			
+
 			}
 		}
 		else
 			insertIVPTValue(p, addr, tag, nposcache);
-		
+
 	}
 
 }
@@ -882,7 +884,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 	     unsigned int meta_size,	/* meta table size */
 	     unsigned int shift_width,	/* history register width */
 	     unsigned int xor,  	/* history xor address flag */
-	     unsigned int btb_sets,	/* number of sets in BTB */ 
+	     unsigned int btb_sets,	/* number of sets in BTB */
 	     unsigned int btb_assoc,	/* BTB associativity */
 	     unsigned int retstack_size) /* num entries in ret-addr stack */
 {
@@ -896,27 +898,27 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
   switch (class) {
   case BPredComb:
     /* bimodal component */
-    pred->dirpred.bimod = 
+    pred->dirpred.bimod =
       bpred_dir_create(BPred2bit, bimod_size, 0, 0, 0);
 
     /* 2-level component */
-    pred->dirpred.twolev = 
+    pred->dirpred.twolev =
       bpred_dir_create(BPred2Level, l1size, l2size, shift_width, xor);
 
     /* metapredictor component */
-    pred->dirpred.meta = 
+    pred->dirpred.meta =
       bpred_dir_create(BPred2bit, meta_size, 0, 0, 0);
 
     break;
 
   case BPred2Level:
-    pred->dirpred.twolev = 
+    pred->dirpred.twolev =
       bpred_dir_create(class, l1size, l2size, shift_width, xor);
 
     break;
 
   case BPred2bit:
-    pred->dirpred.bimod = 
+    pred->dirpred.bimod =
       bpred_dir_create(class, bimod_size, 0, 0, 0);
 
   case BPredTaken:
@@ -956,7 +958,7 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
 	      pred->btb.btb_data[i].next = &pred->btb.btb_data[i+1];
 	    else
 	      pred->btb.btb_data[i].next = NULL;
-	    
+
 	    if (i % pred->btb.assoc != pred->btb.assoc - 1)
 	      pred->btb.btb_data[i+1].prev = &pred->btb.btb_data[i];
 	  }
@@ -964,14 +966,14 @@ bpred_create(enum bpred_class class,	/* type of predictor to create */
       /* allocate retstack */
       if ((retstack_size & (retstack_size-1)) != 0)
 	fatal("Return-address-stack size must be zero or a power of two");
-      
+
       pred->retstack.size = retstack_size;
       if (retstack_size)
-	if (!(pred->retstack.stack = calloc(retstack_size, 
+	if (!(pred->retstack.stack = calloc(retstack_size,
 					    sizeof(struct bpred_btb_ent_t))))
 	  fatal("cannot allocate return-address-stack");
       pred->retstack.tos = retstack_size - 1;
-      
+
       break;
     }
 
@@ -1010,25 +1012,25 @@ bpred_dir_create (
   case BPred2Level:
     {
       if (!l1size || (l1size & (l1size-1)) != 0)
-	fatal("level-1 size, `%d', must be non-zero and a power of two", 
+	fatal("level-1 size, `%d', must be non-zero and a power of two",
 	      l1size);
       pred_dir->config.two.l1size = l1size;
-      
+
       if (!l2size || (l2size & (l2size-1)) != 0)
-	fatal("level-2 size, `%d', must be non-zero and a power of two", 
+	fatal("level-2 size, `%d', must be non-zero and a power of two",
 	      l2size);
       pred_dir->config.two.l2size = l2size;
-      
+
       if (!shift_width || shift_width > 30)
 	fatal("shift register width, `%d', must be non-zero and positive",
 	      shift_width);
       pred_dir->config.two.shift_width = shift_width;
-      
+
       pred_dir->config.two.xor = xor;
       pred_dir->config.two.shiftregs = calloc(l1size, sizeof(int));
       if (!pred_dir->config.two.shiftregs)
 	fatal("cannot allocate shift register table");
-      
+
       pred_dir->config.two.l2table = calloc(l2size, sizeof(unsigned char));
       if (!pred_dir->config.two.l2table)
 	fatal("cannot allocate second level table");
@@ -1046,7 +1048,7 @@ bpred_dir_create (
 
   case BPred2bit:
     if (!l1size || (l1size & (l1size-1)) != 0)
-      fatal("2bit table size, `%d', must be non-zero and a power of two", 
+      fatal("2bit table size, `%d', must be non-zero and a power of two",
 	    l1size);
     pred_dir->config.bimod.size = l1size;
     if (!(pred_dir->config.bimod.table =
@@ -1117,21 +1119,21 @@ bpred_config(struct bpred_t *pred,	/* branch predictor instance */
     bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
     bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
     bpred_dir_config (pred->dirpred.meta, "meta", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
+    fprintf(stream, "btb: %d sets x %d associativity",
 	    pred->btb.sets, pred->btb.assoc);
     fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
     break;
 
   case BPred2Level:
     bpred_dir_config (pred->dirpred.twolev, "2lev", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
+    fprintf(stream, "btb: %d sets x %d associativity",
 	    pred->btb.sets, pred->btb.assoc);
     fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
     break;
 
   case BPred2bit:
     bpred_dir_config (pred->dirpred.bimod, "bimod", stream);
-    fprintf(stream, "btb: %d sets x %d associativity", 
+    fprintf(stream, "btb: %d sets x %d associativity",
 	    pred->btb.sets, pred->btb.assoc);
     fprintf(stream, "ret_stack: %d entries", pred->retstack.size);
     break;
@@ -1195,22 +1197,22 @@ bpred_reg_stats(struct bpred_t *pred,	/* branch predictor instance */
   sprintf(buf1, "%s.dir_hits + %s.misses", name, name);
   stat_reg_formula(sdb, buf, "total number of updates", buf1, "%12.0f");
   sprintf(buf, "%s.addr_hits", name);
-  stat_reg_counter(sdb, buf, "total number of address-predicted hits", 
+  stat_reg_counter(sdb, buf, "total number of address-predicted hits",
 		   &pred->addr_hits, 0, NULL);
   sprintf(buf, "%s.dir_hits", name);
-  stat_reg_counter(sdb, buf, 
+  stat_reg_counter(sdb, buf,
 		   "total number of direction-predicted hits "
-		   "(includes addr-hits)", 
+		   "(includes addr-hits)",
 		   &pred->dir_hits, 0, NULL);
   if (pred->class == BPredComb)
     {
       sprintf(buf, "%s.used_bimod", name);
-      stat_reg_counter(sdb, buf, 
-		       "total number of bimodal predictions used", 
+      stat_reg_counter(sdb, buf,
+		       "total number of bimodal predictions used",
 		       &pred->used_bimod, 0, NULL);
       sprintf(buf, "%s.used_2lev", name);
-      stat_reg_counter(sdb, buf, 
-		       "total number of 2-level predictions used", 
+      stat_reg_counter(sdb, buf,
+		       "total number of 2-level predictions used",
 		       &pred->used_2lev, 0, NULL);
     }
   sprintf(buf, "%s.misses", name);
@@ -1359,7 +1361,7 @@ bpred_dir_lookup(struct bpred_dir_t *pred_dir,	/* branch dir predictor inst */
    static predictors), and OP is the instruction opcode (used to simulate
    predecode bits; a pointer to the predictor state entry (or null for jumps)
    is returned in *DIR_UPDATE_PTR (used for updating predictor state),
-   and the non-speculative top-of-stack is returned in stack_recover_idx 
+   and the non-speculative top-of-stack is returned in stack_recover_idx
    (used for recovering ret-addr stack after mis-predict).  */
 md_addr_t				/* predicted branch target addr */
 bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
@@ -1471,12 +1473,12 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
   if (is_call && pred->retstack.size)
     {
       pred->retstack.tos = (pred->retstack.tos + 1)% pred->retstack.size;
-      pred->retstack.stack[pred->retstack.tos].target = 
+      pred->retstack.stack[pred->retstack.tos].target =
 	baddr + sizeof(md_inst_t);
       pred->retstack_pushes++;
     }
 #endif /* !RAS_BUG_COMPATIBLE */
-  
+
   /* not a return. Get a pointer into the BTB */
   index = (baddr >> MD_BR_SHIFT) & (pred->btb.sets - 1);
 
@@ -1492,7 +1494,7 @@ bpred_lookup(struct bpred_t *pred,	/* branch predictor instance */
 	    pbtb = &pred->btb.btb_data[i];
 	    break;
 	  }
-    }	
+    }
   else
     {
       pbtb = &pred->btb.btb_data[index];
@@ -1546,9 +1548,9 @@ bpred_recover(struct bpred_t *pred,	/* branch predictor instance */
 /* update the branch predictor, only useful for stateful predictors; updates
    entry for instruction type OP at address BADDR.  BTB only gets updated
    for branches which are taken.  Inst was determined to jump to
-   address BTARGET and was taken if TAKEN is non-zero.  Predictor 
-   statistics are updated with result of prediction, indicated by CORRECT and 
-   PRED_TAKEN, predictor state to be updated is indicated by *DIR_UPDATE_PTR 
+   address BTARGET and was taken if TAKEN is non-zero.  Predictor
+   statistics are updated with result of prediction, indicated by CORRECT and
+   PRED_TAKEN, predictor state to be updated is indicated by *DIR_UPDATE_PTR
    (may be NULL for jumps, which shouldn't modify state bits).  Note if
    bpred_update is done speculatively, branch-prediction may get polluted. */
 void
@@ -1601,7 +1603,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       pred->jr_seen++;
       if (correct)
 	pred->jr_hits++;
-      
+
       if (!dir_update_ptr->dir.ras)
 	{
 	  pred->jr_non_ras_seen++;
@@ -1619,9 +1621,9 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   if (pred->class == BPredNotTaken || pred->class == BPredTaken)
     return;
 
-  /* 
+  /*
    * Now we know the branch didn't use the ret-addr stack, and that this
-   * is a stateful predictor 
+   * is a stateful predictor
    */
 
 #ifdef RAS_BUG_COMPATIBLE
@@ -1629,7 +1631,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   if (MD_IS_CALL(op) && pred->retstack.size)
     {
       pred->retstack.tos = (pred->retstack.tos + 1)% pred->retstack.size;
-      pred->retstack.stack[pred->retstack.tos].target = 
+      pred->retstack.stack[pred->retstack.tos].target =
 	baddr + sizeof(md_inst_t);
       pred->retstack_pushes++;
     }
@@ -1641,7 +1643,7 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       (pred->class == BPred2Level || pred->class == BPredComb))
     {
       int l1index, shift_reg;
-      
+
       /* also update appropriate L1 history register */
       l1index =
 	(baddr >> MD_BR_SHIFT) & (pred->dirpred.twolev->config.two.l1size - 1);
@@ -1655,11 +1657,11 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
   if (taken)
     {
       index = (baddr >> MD_BR_SHIFT) & (pred->btb.sets - 1);
-      
+
       if (pred->btb.assoc > 1)
 	{
 	  index *= pred->btb.assoc;
-	  
+
 	  /* Now we know the set; look for a PC match; also identify
 	   * MRU and LRU items */
 	  for (i = index; i < (index+pred->btb.assoc) ; i++)
@@ -1670,8 +1672,8 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		  assert(!pbtb);
 		  pbtb = &pred->btb.btb_data[i];
 		}
-	      
-	      dassert(pred->btb.btb_data[i].prev 
+
+	      dassert(pred->btb.btb_data[i].prev
 		      != pred->btb.btb_data[i].next);
 	      if (pred->btb.btb_data[i].prev == NULL)
 		{
@@ -1687,14 +1689,14 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 		}
 	    }
 	  dassert(lruhead && lruitem);
-	  
+
 	  if (!pbtb)
 	    /* missed in BTB; choose the LRU item in this set as the victim */
-	    pbtb = lruitem;	
+	    pbtb = lruitem;
 	  /* else hit, and pbtb points to matching BTB entry */
-	  
+
 	  /* Update LRU state: selected item, whether selected because it
-	   * matched or because it was LRU and selected as a victim, becomes 
+	   * matched or because it was LRU and selected as a victim, becomes
 	   * MRU */
 	  if (pbtb != lruhead)
 	    {
@@ -1715,10 +1717,10 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
       else
 	pbtb = &pred->btb.btb_data[index];
     }
-      
-  /* 
-   * Now 'p' is a possibly null pointer into the direction prediction table, 
-   * and 'pbtb' is a possibly null pointer into the BTB (either to a 
+
+  /*
+   * Now 'p' is a possibly null pointer into the direction prediction table,
+   * and 'pbtb' is a possibly null pointer into the BTB (either to a
    * matched-on entry or a victim which was LRU in its set)
    */
 
@@ -1793,4 +1795,1372 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	  pbtb->target = btarget;
 	}
     }
+}
+
+//#include "bpred.h"
+#include "spred.h"
+
+/* turn this on to enable the SimpleScalar 2.0 RAS bug */
+/* #define RAS_BUG_COMPATIBLE */
+
+/* neural network counters (defined here, declared in spred.h) */
+
+/*hybrid neural*/
+int last_value[500];
+int lvalue;
+int stride[500];
+int svalue;
+int context[500];
+int cvalue;
+int ct_last_value = 0;
+int ct_stride = 0;
+int ct_context = 0;
+int m1;
+int m2;
+int m3;;
+int state_lv[32];
+int state_stride[32];
+int state_context[32];
+
+  int nInputLayerNeurons= 9;
+  int nHiddenLayerNeurons= 10;
+  int nOutputLayerNeurons= 3;
+  float neth[500];
+  float whin[500][500];
+  float bhin[500];
+  float hidd[500];
+  float neto[500];
+  float wohi[500][500];
+  float bohi[500];
+  float deltaout[500];
+  float deltain[500];
+  float learningRate = 0.3;
+  FILE *input, *output, * Weights;
+  int in[500];
+  float out[3];
+  int tp[3];
+
+void initializare()
+{
+	int i;
+	for(i = 0; i<32; i++)
+	{
+		state_lv[i] = 0;
+		state_stride[i] = 0;
+		state_context[i] = 0;
+	}
+}
+
+void generateRandomWeights()
+  {
+   int j, k;
+   Weights = fopen("RandomWeights.txt","w");
+   for(j=0; j<nHiddenLayerNeurons; j++)
+    {
+      bhin[j] =  ((rand() % 4000)*1.0)/10000.0 + 0.3;
+      fprintf(Weights, "%f\t", bhin[j]);
+      for(k=0; k<nInputLayerNeurons; k++)
+      {
+	  whin[j][k] = ((rand() % 4000)*1.0)/10000.0 + 0.3;
+	  fprintf(Weights, "%f\t", whin[j][k]);
+      }
+    }
+    for(j=0; j<nOutputLayerNeurons; j++)
+    {
+      bohi[j] = ((rand() % 4000)*1.0)/10000.0 + 0.3;
+      fprintf(Weights, "%f\t", bohi[j]);
+      for(k=0; k<nHiddenLayerNeurons; k++)
+      {
+	 wohi[j][k] = ((rand() % 4000)*1.0)/10000.0 + 0.3;
+	 fprintf(Weights, "%f\t", wohi[j][k]);
+      }
+    }
+    fclose(Weights);
+}
+
+void saveWeights(){
+   int j, k;
+   Weights = fopen("Weights.txt","w");
+   for(j=0; j<nHiddenLayerNeurons; j++)
+    {
+      fprintf(Weights, "%f\t", bhin[j]);
+      for(k=0; k<nInputLayerNeurons; k++)
+      	fprintf(Weights, "%f\t", whin[j][k]);
+    }
+    for(j=0; j<nOutputLayerNeurons; j++)
+    {
+      fprintf(Weights, "%f\t", bohi[j]);
+      for(k=0; k<nHiddenLayerNeurons; k++)
+      	fprintf(Weights, "%f\t", wohi[j][k]);
+    }
+    fclose(Weights);
+}
+
+void loadWeights(){
+   int j, k;
+   Weights = fopen("Weights.txt","w");
+   for(j=0; j<nHiddenLayerNeurons; j++)
+    {
+      fscanf(Weights, "%f\t", &bhin[j]);
+      for(k=0; k<nInputLayerNeurons; k++)
+      	fscanf(Weights, "%f\t", &whin[j][k]);
+    }
+    for(j=0; j<nOutputLayerNeurons; j++)
+    {
+      fscanf(Weights, "%f\t", &bohi[j]);
+      for(k=0; k<nHiddenLayerNeurons; k++)
+      	fscanf(Weights, "%f\t", &wohi[j][k]);
+    }
+    fclose(Weights);
+}
+
+double F(double val)
+  {
+    return 1/(1 + exp(-1 * val));
+  }
+
+double dF(double val)
+  {
+    return F(val)*(1 - F(val));
+  }
+
+double F1(double val)
+  {
+    return (1 - exp(-1 * val))/(1 + exp(-1 * val));
+  }
+
+double dF1(double val)
+  {
+    return (1 - (F(val)*F(val)))/2;
+  }
+
+void forward(int in[], float out[])
+  {
+    int j,l;
+
+    for(j=0; j<nHiddenLayerNeurons; j++)
+    {
+      neth[j] = bhin[j];
+      for(l=0; l<nInputLayerNeurons; l++)
+	neth[j] += whin[j][l] * in[l];
+      hidd[j] = F(neth[j]);
+    }
+
+    for(j=0; j<nOutputLayerNeurons; j++)
+    {
+      neto[j] = bohi[j];
+      for(l=0; l<nHiddenLayerNeurons; l++)
+	neto[j] += wohi[j][l] * hidd[l];
+      out[j] = F(neto[j]);
+    }
+  }
+
+void backward(int tp[], int in[], float out[])
+  {
+
+    double deltaout[32];
+    double deltain[32];
+    int j,k,l;
+    for(j=0; j<nOutputLayerNeurons; j++)
+      for(l=0; l<nHiddenLayerNeurons; l++)
+      {
+	deltaout[j] = (tp[j] - out[j])  * dF(neto[j]);
+	wohi[j][l] += learningRate*deltaout[j]*hidd[l];
+        bohi[j] += learningRate*deltaout[j];
+      }
+    for(j=0; j<nHiddenLayerNeurons; j++)
+      for(l=0; l<nInputLayerNeurons; l++)
+      {
+        deltain[j] = 0;
+        for(k=0; k<nOutputLayerNeurons; k++)
+          deltain[j] += deltaout[k]*wohi[k][j]*dF(neth[j]);
+        whin[j][l] += learningRate*deltain[j]*in[l];
+        bhin[j] += learningRate*deltain[j];
+      }
+  }
+
+int maxim(int v[], int k)
+   {
+	int i;
+	int ct = 0;
+	for(i = 0; i < k; i++)
+		if(v[i] == 1) ct ++;
+	return ct;
+   }
+
+
+LVPTaddrList pushLVPTAddress(LVPTaddrList p, md_addr_t addr)
+{
+  LVPTaddrList q;
+  q=(LVPTaddrList)malloc(sizeof(struct LVPTlocation));
+  q->addr=addr;
+  q->nextAddress=p;
+  q->values = NULL;
+  q->automat = 0;
+  return q;
+}
+
+void insertLVPTValue(LVPTaddrList ad, sword_t value, int history, int contextual)
+{
+  int i;
+  LVPTvalueList q = ad->values;
+  LVPTvalueList p;
+  LVPTvalueList newValue;
+  if(!contextual || contextual == 2)	// stride or hybrid predictor
+  {
+	  if(ad->values != NULL)
+	  {
+		ad->stride[1] = ad->stride[0];
+		ad->stride[0] = value - q->value;
+	  }
+  }
+  if(history == 1)
+  {
+	  if(ad->values != NULL)
+	  {
+			q->value = value;
+			return;
+	  }
+  }
+  else if(q != NULL)
+  {
+	p = q->nextValue;
+    for(i=1; i<history; i++)
+	{
+	  if(p == NULL) break;
+	  if(i == history-1)
+	  {
+	    q->nextValue = NULL;
+	    free(p);
+		break;
+	  }
+	  p=p->nextValue;
+	  q=q->nextValue;
+	}
+  }
+  newValue=(LVPTvalueList)malloc(sizeof(struct LVPTelement));
+  newValue->value=value;
+  newValue->nextValue=ad->values;
+  ad->values=newValue;
+}
+
+sword_t maxLVPTValue(LVPTvalueList p)
+{
+	LVPTvalueList q = p;
+	int maximumCount = p->count;
+	sword_t maximumValue = p->value;
+	while(q != NULL)
+	{
+		if(q->count > maximumCount)
+		{
+			maximumCount = q->count;
+			maximumValue = q->value;
+		}
+		q = q->nextValue;
+	}
+	return maximumValue;
+}
+
+sword_t predictStride(LVPTaddrList p, int history, int contextual, int pattern)
+{
+	LVPTvalueList q = p->values;
+	if(!contextual && p->stride[0] == p->stride[1])
+		return q->value + p->stride[0];
+	return p->values->value;	// the last value
+}
+
+sword_t predictLastValue(LVPTaddrList p, int history, int contextual, int pattern)
+{
+	LVPTvalueList q = p->values;
+	if(q != NULL)
+		return q->value;
+	return 0;
+}
+
+sword_t predictContextual(LVPTaddrList p, int history, int contextual, int pattern)
+{
+	int i,j;
+	LVPTvalueList q = p->values;
+	if(history>1 && q != NULL)	// contextual or hybrid prediction
+	{
+		int currentPattern = pattern;
+		while(currentPattern > 0)
+		{
+			LVPTvalueList patternValueList = NULL;
+			for(i=0; i<history-currentPattern; i++)
+			{
+				LVPTvalueList k;
+				LVPTvalueList patternValues;
+				int isPattern;
+				if(q == NULL)
+					break;
+				k = q->nextValue;
+				patternValues = p->values;
+				isPattern = 1;
+				for(j=0; j<currentPattern; j++)
+				{
+					if(k != NULL && patternValues != NULL)
+					{
+						if(k->value != patternValues->value)
+						{
+							isPattern = 0;
+							break;
+						}
+					}
+					else
+					{
+						isPattern = 0;
+						break;
+					}
+					k = k->nextValue;
+					patternValues = patternValues->nextValue;
+				}
+				if(isPattern)
+				{
+					LVPTvalueList newValue;
+					if(patternValueList == NULL)	// insert the value
+					{
+						newValue=(LVPTvalueList)malloc(sizeof(struct LVPTelement));
+						newValue->value = q->value; // the value which follows the pattern
+						newValue->count = 1;
+						newValue->nextValue = patternValueList;
+						patternValueList = newValue;
+					}
+					else
+					{
+						int found = 0;
+						LVPTvalueList temp = patternValueList;
+						while(temp != NULL)
+						{
+							if(temp->value == q->value)
+							{
+								temp->count++;
+								found = 1;
+								break;
+							}
+							temp = temp->nextValue;
+						}
+						if(!found)	// insert the value
+						{
+							newValue=(LVPTvalueList)malloc(sizeof(struct LVPTelement));
+							newValue->value = q->value; // the value which follows the pattern
+							newValue->count = 1;
+							newValue->nextValue = patternValueList;
+							patternValueList = newValue;
+						}
+					}
+				}
+				q = q->nextValue;
+			}
+			if(patternValueList != NULL)
+				return maxLVPTValue(patternValueList);	// contextual prediction
+			currentPattern--;
+		}
+		return p->values->value;	// the last value
+	}
+	return p->values->value;	// the last value
+}
+
+
+sword_t predictHisteresisHibrid(LVPTaddrList p, int history, int contextual, int pattern)
+{
+	int i,j;
+	LVPTvalueList q = p->values;
+	if(contextual && history>1 && q != NULL)	// contextual or hybrid prediction
+	{
+		int currentPattern = pattern;
+		while(currentPattern > 0)
+		{
+			LVPTvalueList patternValueList = NULL;
+			for(i=0; i<history-currentPattern; i++)
+			{
+				LVPTvalueList k;
+				LVPTvalueList patternValues;
+				int isPattern;
+				if(q == NULL)
+					break;
+				k = q->nextValue;
+				patternValues = p->values;
+				isPattern = 1;
+				for(j=0; j<currentPattern; j++)
+				{
+					if(k != NULL && patternValues != NULL)
+					{
+						if(k->value != patternValues->value)
+						{
+							isPattern = 0;
+							break;
+						}
+					}
+					else
+					{
+						isPattern = 0;
+						break;
+					}
+					k = k->nextValue;
+					patternValues = patternValues->nextValue;
+				}
+				if(isPattern)
+				{
+					LVPTvalueList newValue;
+					if(patternValueList == NULL)	// insert the value
+					{
+						newValue=(LVPTvalueList)malloc(sizeof(struct LVPTelement));
+						newValue->value = q->value; // the value which follows the pattern
+						newValue->count = 1;
+						newValue->nextValue = patternValueList;
+						patternValueList = newValue;
+					}
+					else
+					{
+						int found = 0;
+						LVPTvalueList temp = patternValueList;
+						while(temp != NULL)
+						{
+							if(temp->value == q->value)
+							{
+								temp->count++;
+								found = 1;
+								break;
+							}
+							temp = temp->nextValue;
+						}
+						if(!found)	// insert the value
+						{
+							newValue=(LVPTvalueList)malloc(sizeof(struct LVPTelement));
+							newValue->value = q->value; // the value which follows the pattern
+							newValue->count = 1;
+							newValue->nextValue = patternValueList;
+							patternValueList = newValue;
+						}
+					}
+				}
+				q = q->nextValue;
+			}
+			if(patternValueList != NULL)
+				return maxLVPTValue(patternValueList);	// contextual prediction
+			currentPattern--;
+		}
+		if(contextual == 2 && p->stride[0] == p->stride[1])	// stride prediction of hybrid predictor
+			return p->values->value + p->stride[0];
+		else return p->values->value;	// the last value
+	}
+	return 0;
+}
+
+void freeLVPTValueList(LVPTvalueList *values)
+{
+	LVPTvalueList p = *values;
+	LVPTvalueList q;
+	while(p != NULL)
+	{
+		q = p->nextValue;
+		free(p);
+		p = q;
+	}
+
+}
+
+int foundAssociativeLVPTAddress(md_addr_t addr, sword_t value, int history, LVPTaddrList *lvpt, int LVPTdim, int contextual, int pattern, int k, int reg, int trainingType, int train, int iterations, float threshold, int automat, int biti1, int neural)
+{
+
+  LVPTaddrList p = *lvpt;
+  LVPTaddrList q;
+  int i,t, ct_iterations;
+  int found = 0;
+  float max_val;
+  int max_index;
+  int max_automat;
+  if(*lvpt == NULL)
+	  return found;
+  if(p->addr == addr)
+  {
+		found = 1;
+		if(p->values != NULL)
+		{
+			sword_t predictedValue;
+			if(!contextual) predictedValue = predictStride(p, history, contextual, pattern);
+			if(contextual == 1) predictedValue = predictContextual(p, history, contextual, pattern);
+			if(contextual == 1 && history == 1) predictedValue = predictLastValue(p, history, contextual, pattern);
+			if(contextual == 2) predictedValue = predictHisteresisHibrid(p, history, contextual,pattern);
+			if(contextual == 3)	//neural hybrid
+			{
+				for(t = 0; t<k; t++)
+					in[t] = last_value[t];
+				for(t = k; t<2*k; t++)
+					in[t] = stride[t];
+				for(t = 2*k; t<3*k; t++)
+					in[t] = context[t];
+				if(predictLastValue(p, history, contextual, pattern) == value)
+				{
+					lvalue = 1;
+					if(state_lv[reg] < 3) state_lv[reg] ++;
+				}
+				else
+				{
+					lvalue = 0;
+					if(state_lv[reg] > 0) state_lv[reg] --;
+				}
+				if(ct_last_value < k)
+				{
+					last_value[ct_last_value] = lvalue;
+					ct_last_value ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						last_value[t] = last_value[t-1];
+					last_value[0] = lvalue;
+				}
+
+				if(predictStride(p, history, contextual, pattern) == value)
+				{
+					svalue = 1;
+					if(state_stride[reg] < 3) state_stride[reg] ++;
+				}
+				else
+				{
+					svalue = 0;
+					if(state_stride[reg] > 0) state_stride[reg] --;
+				}
+				if(ct_stride < k)
+				{
+					stride[ct_stride] = svalue;
+					ct_stride ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						stride[t] = stride[t-1];
+					stride[0] = svalue;
+				}
+
+				if(predictContextual(p, history, contextual, pattern) == value)
+				{
+					cvalue = 1;
+					if(state_context[reg] < 3) state_context[reg] ++;
+				}
+				else
+				{
+					cvalue = 0;
+					if(state_context[reg] > 0) state_context[reg] --;
+				}
+				if(ct_context < k)
+				{
+					context[ct_context] = cvalue;
+					ct_context ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						context[t] = context[t-1];
+					context[0] = cvalue;
+				}
+
+				switch(neural)
+				{
+					case 0:	// clasic cu automat
+					{
+						max_automat = state_lv[reg];
+						if( state_stride[reg] > max_automat )
+							max_automat = state_stride[reg];
+						if( state_context[reg] > max_automat )
+							max_automat = state_context[reg];
+						m1 = -1; m2 = -1; m3 = -1;
+						if(state_lv[reg] == max_automat )
+							m1 = maxim(last_value, k);
+						if(state_stride[reg] == max_automat)
+							m2 = maxim(stride, k);
+						if(state_context[reg] == max_automat)
+							m3 = maxim(context, k);
+						max_val = m1;
+						max_index = 0;
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(state_lv[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_lv[reg] >= automat)&&((max_index == 0)&&(lvalue == 1))) 						 														neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(state_stride[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_stride[reg] >= automat)&&((max_index == 1)&&(svalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(state_context[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_context[reg] >= automat)&&((max_index == 2)&&(cvalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+					case 1:	// clasic cu nr de biti 1
+					{
+
+						max_index = 0;
+						max_val = 0;
+						m1 = maxim(last_value, k);
+						m2 = maxim(stride, k);
+						m3 = maxim(context, k);
+						if(m1 > max_val)
+						{
+							max_val = m1;
+							max_index = 0;
+						}
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 0)&&(lvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)  &&((max_index == 1)&&(svalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 2)&&(cvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+
+					case 2:	//neural network cu threshold
+					{
+						forward(in, out);
+						max_index = 0;
+						max_val = out[0];
+						for(t = 1; t<3; t++)
+							if(out[t]>max_val)
+							{
+								max_val = out[t];
+								max_index = t;
+							}
+
+						if(max_val > threshold)
+							NeuralTotalPrediction ++;
+						if( (max_val > threshold)&&(((max_index == 0)&&(lvalue == 1))||((max_index == 1)&&(svalue == 1))||((max_index == 2)&&(cvalue == 1))) )  				 									neuralValuePrediction ++;
+
+						if(lvalue == 1) tp[0] = 1;
+							else	tp[0] = 0;
+						if(svalue == 1) tp[1] = 1;
+							else	tp[1] = 0;
+						if(cvalue == 1) tp[2] = 1;
+							else	tp[2] = 0;
+						backward(tp, in, out);
+
+						if( (trainingType == 1)&&(train == 1) )
+						{
+							ct_iterations = 0;
+						 while( (max_val < threshold)&&(ct_iterations<iterations) )
+							{
+								forward(in, out);
+								max_val = out[0];
+								for(t = 1; t<3; t++)
+									if(out[t]>max_val)
+									{
+										max_val = out[t];
+										max_index = t;
+									}
+								backward(tp, in, out);
+								ct_iterations ++;
+							}
+						}
+						break;
+					}
+				}
+			}
+
+			if(value == predictedValue)
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+				{
+					valuePrediction++;
+					classifiedPred++;
+					predictable++;
+				}
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+					classifiedUnpred++;
+				if(p->automat < 3)
+					p->automat++;
+			}
+			else
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+					classifiedPred++;
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+				{
+					classifiedUnpred++;
+					unpredictable++;
+				}
+				if(p->automat > 0)
+					p->automat--;
+			}
+		}
+		else
+		{
+			if(p->automat > 0)
+				p->automat--;
+		}
+		insertLVPTValue(p, value, history, contextual);
+		return found;
+  }
+  else
+  {
+	q = p->nextAddress;
+    for(i=1;; i++)
+	{
+		if( (q == NULL) || (i == LVPTdim) ) break;
+		if(q->addr == addr)
+		{
+			found = 1;
+			if(q->values != NULL)
+			{
+			 	sword_t predictedValue;
+				if(!contextual) predictedValue = predictStride(p, history, contextual, pattern);
+			 	if(contextual == 1) predictedValue = predictContextual(p, history, contextual, pattern);
+				if(contextual == 1 && history == 1) predictedValue = predictLastValue(p, history, contextual, pattern);
+				if(contextual == 2) predictedValue = predictHisteresisHibrid(p, history, contextual,pattern);
+				if(contextual == 3)	//neural hybrid
+			{
+				for(t = 0; t<k; t++)
+					in[t] = last_value[t];
+				for(t = k; t<2*k; t++)
+					in[t] = stride[t];
+				for(t = 2*k; t<3*k; t++)
+					in[t] = context[t];
+				if(predictLastValue(p, history, contextual, pattern) == value)
+				{
+					lvalue = 1;
+					if(state_lv[reg] < 3) state_lv[reg] ++;
+				}
+				else
+				{
+					lvalue = 0;
+					if(state_lv[reg] > 0) state_lv[reg] --;
+				}
+				if(ct_last_value < k)
+				{
+					last_value[ct_last_value] = lvalue;
+					ct_last_value ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						last_value[t] = last_value[t-1];
+					last_value[0] = lvalue;
+				}
+
+				if(predictStride(p, history, contextual, pattern) == value)
+				{
+					svalue = 1;
+					if(state_stride[reg] < 3) state_stride[reg] ++;
+				}
+				else
+				{
+					svalue = 0;
+					if(state_stride[reg] > 0) state_stride[reg] --;
+				}
+				if(ct_stride < k)
+				{
+					stride[ct_stride] = svalue;
+					ct_stride ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						stride[t] = stride[t-1];
+					stride[0] = svalue;
+				}
+
+				if(predictContextual(p, history, contextual, pattern) == value)
+				{
+					cvalue = 1;
+					if(state_context[reg] < 3) state_context[reg] ++;
+				}
+				else
+				{
+					cvalue = 0;
+					if(state_context[reg] > 0) state_context[reg] --;
+				}
+				if(ct_context < k)
+				{
+					context[ct_context] = cvalue;
+					ct_context ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						context[t] = context[t-1];
+					context[0] = cvalue;
+				}
+
+				switch(neural)
+				{
+					case 0:	// clasic cu automat
+					{
+						max_automat = state_lv[reg];
+						if( state_stride[reg] > max_automat )
+							max_automat = state_stride[reg];
+						if( state_context[reg] > max_automat )
+							max_automat = state_context[reg];
+						m1 = -1; m2 = -1; m3 = -1;
+						if(state_lv[reg] == max_automat )
+							m1 = maxim(last_value, k);
+						if(state_stride[reg] == max_automat)
+							m2 = maxim(stride, k);
+						if(state_context[reg] == max_automat)
+							m3 = maxim(context, k);
+						max_val = m1;
+						max_index = 0;
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(state_lv[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_lv[reg] >= automat)&&((max_index == 0)&&(lvalue == 1))) 						 														neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(state_stride[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_stride[reg] >= automat)&&((max_index == 1)&&(svalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(state_context[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_context[reg] >= automat)&&((max_index == 2)&&(cvalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+					case 1:	// clasic cu nr de biti 1
+					{
+
+						max_index = 0;
+						max_val = 0;
+						m1 = maxim(last_value, k);
+						m2 = maxim(stride, k);
+						m3 = maxim(context, k);
+						if(m1 > max_val)
+						{
+							max_val = m1;
+							max_index = 0;
+						}
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 0)&&(lvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)  &&((max_index == 1)&&(svalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 2)&&(cvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+
+					case 2:	//neural network cu threshold
+					{
+						forward(in, out);
+						max_index = 0;
+						max_val = out[0];
+						for(t = 1; t<3; t++)
+							if(out[t]>max_val)
+							{
+								max_val = out[t];
+								max_index = t;
+							}
+
+						if(max_val > threshold)
+							NeuralTotalPrediction ++;
+						if( (max_val > threshold)&&(((max_index == 0)&&(lvalue == 1))||((max_index == 1)&&(svalue == 1))||((max_index == 2)&&(cvalue == 1))) )  				 									neuralValuePrediction ++;
+
+						if(lvalue == 1) tp[0] = 1;
+							else	tp[0] = 0;
+						if(svalue == 1) tp[1] = 1;
+							else	tp[1] = 0;
+						if(cvalue == 1) tp[2] = 1;
+							else	tp[2] = 0;
+						backward(tp, in, out);
+
+						if( (trainingType == 1)&&(train == 1) )
+						{
+							ct_iterations = 0;
+						  while( (max_val < threshold)&&(ct_iterations<iterations) )
+							{
+								forward(in, out);
+								max_val = out[0];
+								for(t = 1; t<3; t++)
+									if(out[t]>max_val)
+									{
+										max_val = out[t];
+										max_index = t;
+									}
+								backward(tp, in, out);
+								ct_iterations ++;
+							}
+						}
+						break;
+					}
+				}
+			}
+
+				if(value == predictedValue)
+				{
+					if(q->automat == 2 || q->automat == 3) /* predictable */
+					{
+						valuePrediction++;
+						classifiedPred++;
+						predictable++;
+					}
+					if(q->automat == 0 || q->automat == 1) /* unpredictable */
+						classifiedUnpred++;
+					if(q->automat < 3)
+						q->automat++;
+				}
+				else
+				{
+					if(q->automat == 2 || q->automat == 3) /* predictable */
+						classifiedPred++;
+					if(q->automat == 0 || q->automat == 1) /* unpredictable */
+					{
+						classifiedUnpred++;
+						unpredictable++;
+					}
+					if(q->automat > 0)
+						q->automat--;
+				}
+			}
+			else
+			{
+				if(q->automat > 0)
+					q->automat--;
+			}
+			insertLVPTValue(q, value, history, contextual);
+			/* the address is moved to the first position in the list */
+			p->nextAddress = q->nextAddress;
+			q->nextAddress = *lvpt;
+			*lvpt = q;
+			break;
+		}
+		if(i == LVPTdim-1)
+		{
+			p->nextAddress = NULL;
+			free(q);
+			break;
+		}
+	    p=p->nextAddress;
+		q = q->nextAddress;
+		}
+	 }
+	 return found;
+}
+
+/* LVPT initialization */
+LVPTaddrList LVPTinit(LVPTaddrList l, int LVPTdim)
+{
+	int i;
+	for(i=0; i<LVPTdim; i++)
+		l = pushLVPTAddress(l, 0);
+	return l;
+}
+
+void insertIntoDirrectMappedLVPT(md_addr_t addr, sword_t value, int history, LVPTaddrList *lvpt, int contextual, int LVPTdim, int pattern, int k, int reg, int trainingType, int train, int iterations, float threshold, int automat, int biti1, int neural)
+{
+
+	LVPTaddrList p = *lvpt;
+	LVPTvalueList q;
+	int index;
+	int i,t, ct_iterations;
+	int max_index;
+	float max_val;
+                int max_automat;
+	index = addr % LVPTdim;
+	for(i=0; i<index; i++)
+		p = p->nextAddress;
+	if(p != NULL)
+	{
+		if(p->addr != addr)
+		{
+			p->addr = addr;
+			q = p->values;
+			p->values = NULL;
+			freeLVPTValueList(&q);
+			p->automat = 0;
+		}
+		if(p->values != NULL)
+		{
+			sword_t predictedValue;
+			if(!contextual) predictedValue = predictStride(p, history, contextual, pattern);
+			if(contextual == 1) predictedValue = predictContextual(p, history, contextual, pattern);
+			if(contextual == 1 && history == 1) predictedValue = predictLastValue(p, history, contextual, pattern);
+			if(contextual == 2) predictedValue = predictHisteresisHibrid(p, history, contextual,pattern);
+			if(contextual == 3)	//neural hybrid
+			{
+				for(t = 0; t<k; t++)
+					in[t] = last_value[t];
+				for(t = k; t<2*k; t++)
+					in[t] = stride[t];
+				for(t = 2*k; t<3*k; t++)
+					in[t] = context[t];
+				if(predictLastValue(p, history, contextual, pattern) == value)
+				{
+					lvalue = 1;
+					if(state_lv[reg] < 3) state_lv[reg] ++;
+				}
+				else
+				{
+					lvalue = 0;
+					if(state_lv[reg] > 0) state_lv[reg] --;
+				}
+				if(ct_last_value < k)
+				{
+					last_value[ct_last_value] = lvalue;
+					ct_last_value ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						last_value[t] = last_value[t-1];
+					last_value[0] = lvalue;
+				}
+
+				if(predictStride(p, history, contextual, pattern) == value)
+				{
+					svalue = 1;
+					if(state_stride[reg] < 3) state_stride[reg] ++;
+				}
+				else
+				{
+					svalue = 0;
+					if(state_stride[reg] > 0) state_stride[reg] --;
+				}
+				if(ct_stride < k)
+				{
+					stride[ct_stride] = svalue;
+					ct_stride ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						stride[t] = stride[t-1];
+					stride[0] = svalue;
+				}
+
+				if(predictContextual(p, history, contextual, pattern) == value)
+				{
+					cvalue = 1;
+					if(state_context[reg] < 3) state_context[reg] ++;
+				}
+				else
+				{
+					cvalue = 0;
+					if(state_context[reg] > 0) state_context[reg] --;
+				}
+				if(ct_context < k)
+				{
+					context[ct_context] = cvalue;
+					ct_context ++;
+				}
+				else
+				{
+					for(t=k-1; t>0; t--)
+						context[t] = context[t-1];
+					context[0] = cvalue;
+				}
+
+				switch(neural)
+				{
+					case 0:	// clasic cu automat
+					{
+						max_automat = state_lv[reg];
+						if( state_stride[reg] > max_automat )
+							max_automat = state_stride[reg];
+						if( state_context[reg] > max_automat )
+							max_automat = state_context[reg];
+						m1 = -1; m2 = -1; m3 = -1;
+						if(state_lv[reg] == max_automat )
+							m1 = maxim(last_value, k);
+						if(state_stride[reg] == max_automat)
+							m2 = maxim(stride, k);
+						if(state_context[reg] == max_automat)
+							m3 = maxim(context, k);
+						max_val = m1;
+						max_index = 0;
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(state_lv[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_lv[reg] >= automat)&&((max_index == 0)&&(lvalue == 1))) 						 														neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(state_stride[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_stride[reg] >= automat)&&((max_index == 1)&&(svalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(state_context[reg] >= automat)
+									NeuralTotalPrediction ++;
+								if((state_context[reg] >= automat)&&((max_index == 2)&&(cvalue == 1))) 						 												neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+					case 1:	// clasic cu nr de biti 1
+					{
+
+						max_index = 0;
+						max_val = 0;
+						m1 = maxim(last_value, k);
+						m2 = maxim(stride, k);
+						m3 = maxim(context, k);
+						if(m1 > max_val)
+						{
+							max_val = m1;
+							max_index = 0;
+						}
+						if(m2 > max_val)
+						{
+							max_val = m2;
+							max_index = 1;
+						}
+						if(m3 > max_val)
+						{
+							max_val = m3;
+							max_index = 2;
+						}
+
+						switch( max_index )
+						{
+							case 0:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 0)&&(lvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 1:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)  &&((max_index == 1)&&(svalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+							case 2:
+							{
+								if(max_val >= biti1)
+									NeuralTotalPrediction ++;
+								if((max_val >= biti1)&&((max_index == 2)&&(cvalue == 1))) 						 															neuralValuePrediction ++;
+								break;
+							}
+						}
+						break;
+					}
+
+					case 2:	//neural network cu threshold
+					{
+						forward(in, out);
+						max_index = 0;
+						max_val = out[0];
+						for(t = 1; t<3; t++)
+							if(out[t]>max_val)
+							{
+								max_val = out[t];
+								max_index = t;
+							}
+
+						if(max_val > threshold)
+							NeuralTotalPrediction ++;
+						if( (max_val > threshold)&&(((max_index == 0)&&(lvalue == 1))||((max_index == 1)&&(svalue == 1))||((max_index == 2)&&(cvalue == 1))) )  				 									neuralValuePrediction ++;
+
+						if(lvalue == 1) tp[0] = 1;
+							else	tp[0] = 0;
+						if(svalue == 1) tp[1] = 1;
+							else	tp[1] = 0;
+						if(cvalue == 1) tp[2] = 1;
+							else	tp[2] = 0;
+						backward(tp, in, out);
+
+						if( (trainingType == 1)&&(train == 1) )
+						{
+							ct_iterations = 0;
+						  while( (max_val < threshold)&&(ct_iterations<iterations) )
+							{
+								forward(in, out);
+								max_val = out[0];
+								for(t = 1; t<3; t++)
+									if(out[t]>max_val)
+									{
+										max_val = out[t];
+										max_index = t;
+									}
+								backward(tp, in, out);
+								ct_iterations ++;
+							}
+						}
+						break;
+					}
+				}
+			}
+
+			if(value == predictedValue)
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+				{
+					valuePrediction++;
+					classifiedPred++;
+					predictable++;
+				}
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+					classifiedUnpred++;
+				if(p->automat < 3)
+					p->automat++;
+			}
+			else
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+					classifiedPred++;
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+				{
+					classifiedUnpred++;
+					unpredictable++;
+				}
+				if(p->automat > 0)
+					p->automat--;
+			}
+		}
+		else
+		{
+			if(p->automat > 0)
+				p->automat--;
+		}
+		insertLVPTValue(p, value, history, contextual);
+	}
+
+}
+
+/* register value predictor stats */
+void
+vpred_reg_stats(struct stat_sdb_t *sdb)	/* stats database */
+{
+
+  stat_reg_counter(sdb, "loadValueLocality",
+		   "total number of before seen load values",
+		   &loadValueLocality, 0, NULL);
+  stat_reg_counter(sdb, "valuePrediction",
+		   "total number of correctly predicted values",
+		   &valuePrediction, 0, NULL);
+  stat_reg_counter(sdb, "neuralValuePrediction",
+		   "total number of correctly predicted register's values using neural network",
+ 		   &neuralValuePrediction, 0, NULL);
+  stat_reg_counter(sdb, "NeuralTotalPrediction",
+		   "total number of predicted register's values using neural network",
+		   &NeuralTotalPrediction, 0, NULL);
+  stat_reg_counter(sdb, "classifiedPred",
+		   "number of loads classified as predictable",
+		   &classifiedPred, 0, NULL);
+  stat_reg_counter(sdb, "classifiedUnpred",
+		   "number of loads classified as unpredictable",
+		   &classifiedUnpred, 0, NULL);
+  stat_reg_counter(sdb, "predictable",
+		   "correctly classified predictable loads",
+		   &predictable, 0, NULL);
+  stat_reg_counter(sdb, "unpredictable",
+		   "correctly classified unpredictable loads",
+		   &unpredictable, 0, NULL);
 }

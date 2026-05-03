@@ -71,6 +71,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "host.h"
 #include "misc.h"
@@ -172,6 +173,37 @@ static counter_t sim_num_refs = 0;
 /* total number of branches executed */
 static counter_t sim_num_branches = 0;
 
+/* which register to predict (0=all, 99=MIPS ABI caller-saved) */
+static int reg;
+
+/* neural history size */
+static int k;
+
+/* training: 0=static no-train, 1=static with train */
+static int train;
+
+/* training type: 0=dynamic, 1=static */
+static int trainingType;
+
+/* threshold (as integer, divided by 10 to get float) */
+static int threshold_int;
+static float threshold;
+
+/* meta-predictor automaton variant */
+static int automat;
+
+/* number of 1-bits heuristic */
+static int biti1;
+
+/* neural predictor variant (0=none, 1=bits, 2=neural) */
+static int neural;
+
+/* nr of training iterations */
+static int iterations;
+
+/* dimension of LVPT for register prediction */
+static int LVPTdim;
+
 
 /* register simulator-specific options */
 void
@@ -271,6 +303,35 @@ sim_reg_options(struct opt_odb_t *odb)
 		   btb_config, btb_nelt, &btb_nelt,
 		   /* default */btb_config,
 		   /* print */TRUE, /* format */NULL, /* !accrue */FALSE);
+
+  /* register value prediction options */
+  opt_reg_uint(odb, "-reg", "which register to predict (0=all, 99=MIPS ABI caller-saved)",
+	       &reg, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-k", "neural history behaviour (number of last behaviours)",
+	       &k, /* default */3,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-neural", "neural predictor variant (0=classic automaton, 1=classic bits1, 2=neural network)",
+	       &neural, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-automat", "automaton type for meta-prediction",
+	       &automat, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-biti1", "number of 1-bits heuristic",
+	       &biti1, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-train", "training: 0=no training, 1=static with training",
+	       &train, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-trainingType", "training type: 0=dynamic, 1=static",
+	       &trainingType, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-iterations", "number of training iterations",
+	       &iterations, /* default */10000,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-threshold", "prediction threshold (integer, divide by 10 for float)",
+	       &threshold_int, /* default */0,
+	       /* print */TRUE, /* format */NULL);
 }
 
 /* check simulator-specific option values */
@@ -400,6 +461,26 @@ sim_reg_stats(struct stat_sdb_t *sdb)
   //Target Cache
   if(contextual == 0)
 	vpred_tc_stats(sdb);
+
+  /* register value prediction stats */
+  stat_reg_counter(sdb, "sim_num_loads",
+		   "total number of register instructions predicted",
+		   &sim_num_loads, 0, NULL);
+  stat_reg_counter(sdb, "valuePrediction",
+		   "total number of correctly predicted register values",
+		   &valuePrediction, 0, NULL);
+  stat_reg_counter(sdb, "classifiedPred",
+		   "total JIndir's classified as predictable",
+		   &classifiedPred, 0, NULL);
+  stat_reg_counter(sdb, "classifiedUnpred",
+		   "total JIndir's classified as unpredictable",
+		   &classifiedUnpred, 0, NULL);
+  stat_reg_counter(sdb, "predictable",
+		   "correctly classified predictable",
+		   &predictable, 0, NULL);
+  stat_reg_counter(sdb, "wpredicted",
+		   "wrongly predicted",
+		   &wpredicted, 0, NULL);
 }
 /* initialize the simulator */
 void
@@ -575,6 +656,9 @@ sim_main(void)
 {
 int out1, out2;
   int in1, in2, in3;
+  int i;
+  LVPTaddrList lvpt;
+  LVPTaddrList RPT[64];
   md_inst_t inst;
   register md_addr_t addr, target_PC;
   enum md_opcode op;
@@ -603,6 +687,22 @@ int out1, out2;
 
   fprintf(stderr, "sim: ** starting functional simulation w/ predictors **\n");
   atexit(finalize_stats);
+
+  /* initialize register prediction table */
+  for(i=0; i<64; i++) RPT[i] = NULL;
+  lvpt = NULL;
+  LVPTdim = 1;
+
+  /* initialize neural/threshold parameters */
+  threshold = (float)threshold_int / 10.0f;
+  initializare();
+  if(trainingType == 0)
+    generateRandomWeights();
+  else {
+    if(train == 1) generateRandomWeights();
+    else           loadWeights();
+  }
+  unlink("endproc.txt");
  l = NULL;
   l_INDIR = news();
   l_CTRL = news();
@@ -750,6 +850,22 @@ int out1, out2;
 	    is_write = TRUE;
 	}
 
+      /* register value prediction (predict==3) */
+      if( (predict == 3) &&
+          (((reg == 99) && (out1==1 || out1==7 || out1==17 ||
+                            (out1>19 && out1<24) || out1==29 || out1==30 || out1==31))
+           || (reg == out1)) )
+      {
+        sim_num_loads++;
+        if(RPT[out1] == NULL) {
+          RPT[out1] = pushLVPTAddress(RPT[out1], out1);
+          insertLVPTValue(RPT[out1], regs.regs_R[out1], history, contextual);
+        } else
+          foundAssociativeLVPTAddress(out1, regs.regs_R[out1], history, &RPT[out1],
+            1, contextual, pattern, k, out1, trainingType, train,
+            iterations, threshold, automat, biti1, neural);
+      }
+
       if (MD_OP_FLAGS(op) & F_CTRL)
 	{
 	  md_addr_t pred_PC;
@@ -800,9 +916,10 @@ int out1, out2;
       regs.regs_NPC += sizeof(md_inst_t);
 
       /* finish early? */
-      if (max_insts && sim_num_insn >= max_insts)
-	return;
-
-	//return;
+      if (max_insts && sim_num_insn >= max_insts) {
+        if( (trainingType == 1) && (train == 1) )
+          saveWeights();
+        return;
+      }
     }
 }

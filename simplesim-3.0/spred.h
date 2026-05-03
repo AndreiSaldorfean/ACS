@@ -232,9 +232,6 @@ IVPTCache IVPTinit(IVPTCache l, int dimcache);
 void insertIntoDirrectMappedTargetCache(md_addr_t addr, md_addr_t tag, int index , int dimcache , int nposcache);
 
 
-static counter_t INDIRValueLocality;
-static counter_t nr_salturi_statice_indir;
-static counter_t nr_salturi_statice;
 /* counter for JIndir value locality */
 static counter_t INDIRValueLocality;
 /* counter for JIndir statice */
@@ -248,6 +245,12 @@ static counter_t loadValueLocality = 0;
 /* Total number of correctly predicted JIndir's */
 static counter_t valuePrediction = 0;
 
+/* Total number of correctly predicted register values using neural network */
+static counter_t neuralValuePrediction = 0;
+
+/* Total number of predicted register values using neural network */
+static counter_t NeuralTotalPrediction = 0;
+
 /* Total number of JIndir's classified as predictable */
 static counter_t classifiedPred = 0;
 
@@ -256,6 +259,9 @@ static counter_t classifiedUnpred = 0;
 
 /* Total number of correctly classified predictable JIndir's */
 static counter_t predictable = 0;
+
+/* Total number of correctly classified unpredictable JIndir's */
+static counter_t unpredictable = 0;
 
 /* Total number of wrong predicted JIndir's */
 static counter_t wpredicted = 0;
@@ -449,5 +455,54 @@ void
 bpred_dump(struct bpred_t *pred,	/* branch predictor instance */
 	   FILE *stream);		/* output stream */
 #endif
+
+typedef struct LVPTelement *LVPTvalueList;
+struct LVPTelement
+{
+  sword_t value;
+  LVPTvalueList nextValue;
+  int count;	// it's used only by the contextual predictor
+};
+
+typedef struct LVPTlocation *LVPTaddrList;
+struct LVPTlocation
+{
+  md_addr_t addr;
+  LVPTaddrList nextAddress;
+  LVPTvalueList values;
+  int automat;
+  sword_t stride[2];  // it's used only by the stride predictor
+};
+
+/* neural prediction */
+void initializare();
+void generateRandomWeights();
+double F(double val);
+double F1(double val);
+double dF(double val);
+double dF1(double val);
+void forward(int in[], float out[]);
+void backward(int tp[], int in[], float out[]);
+int maxim(int v[], int k);
+void saveWeights();
+void loadWeights();
+
+
+/* load value prediction functions */
+LVPTaddrList pushLVPTAddress(LVPTaddrList p, md_addr_t addr);
+void insertLVPTValue(LVPTaddrList ad, sword_t value, int history, int contextual);
+sword_t maxLVPTValue(LVPTvalueList p);
+sword_t predictHisteresisHibrid(LVPTaddrList p, int history, int contextual, int pattern);
+sword_t predictStride(LVPTaddrList p, int history, int contextual, int pattern);
+sword_t predictContextual(LVPTaddrList p, int history, int contextual, int pattern);
+sword_t predictLastValue(LVPTaddrList p, int history, int contextual, int pattern);
+void freeLVPTValueList(LVPTvalueList *values);
+int foundAssociativeLVPTAddress(md_addr_t addr, sword_t value, int history, LVPTaddrList *lvpt, int LVPTdim, int contextual, int pattern, int k, int reg, int trainingType,  int train, int iterations, float threshold, int automat, int biti1, int neural);
+LVPTaddrList LVPTinit(LVPTaddrList l, int LVPTdim);
+void insertIntoDirrectMappedLVPT(md_addr_t addr, sword_t value, int history, LVPTaddrList *lvpt, int contextual, int LVPTdim, int pattern, int k, int reg, int trainingType,  int train, int iterations, float threshold, int automat, int biti1, int neural);
+
+/* register value predictor stats */
+void
+vpred_reg_stats(struct stat_sdb_t *sdb);/* stats database */
 
 #endif /* BPRED_H */

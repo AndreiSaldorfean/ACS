@@ -1,6 +1,7 @@
 import shutil
 import json
 import os
+import signal
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -63,17 +64,24 @@ def get_commands(benchmark_cfg: dict):
     return commands
 
 
-def run_command(command: str):
+def run_command(command: str, timeout: int = 120):
 
     try:
         with open(cmd_log_file, "a") as file_handle:
-
-            result = subprocess.run(
-                command, shell=True, stdout=file_handle, stderr=file_handle
+            proc = subprocess.Popen(
+                command, shell=True, stdout=file_handle, stderr=file_handle,
+                start_new_session=True
             )
-            file_handle.write(f"Ran {command}\n")
-            file_handle.write(f"Exit code {result.returncode}\n")
-            file_handle.write("============\n")
+            try:
+                proc.wait(timeout=timeout)
+                file_handle.write(f"Ran {command}\n")
+                file_handle.write(f"Exit code {proc.returncode}\n")
+                file_handle.write("============\n")
+            except subprocess.TimeoutExpired:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                proc.wait()
+                file_handle.write(f"TIMEOUT ({timeout}s): {command}\n")
+                file_handle.write("============\n")
 
     except Exception as e:
         print(f"Cannot run command {command}! Error: {e}")
