@@ -203,6 +203,7 @@ addrList news();
 int foundValue_INDIR(addrList l, sword_t value, int history);
 int foundAddress_INDIR(addrList l, md_addr_t addr, sword_t value, int history);
 
+void aritate_Address(addrList l);
 addrList pushAddress(addrList p, md_addr_t addr, sword_t value);
 void pushValue(addrList p, sword_t value);
 int foundValue(addrList l, sword_t value, int history, int distinct);
