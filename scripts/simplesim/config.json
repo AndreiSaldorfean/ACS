@@ -1,10 +1,62 @@
 {
+    "applu": {
+        "simulators": {
+            "spred": [
+                { "ex1_ppm_256":      "-pred 1 -jvpt 256 -contextual 1 -history 256 -pattern 4" },
+                { "ex1_lv":       "-pred 1 -jvpt 256 -contextual 1 -history 1 -pattern 4" },
+                { "ex2_ppm_32":       "-pred 1 -jvpt 256 -contextual 1 -history 32 -pattern 1" },
+                { "ex4_target_cache": "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 64 -poscache 1 " },
+                { "ex5_hybrid_32":    "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 128 -poscache 8  " },
+                { "ex6_hybrid_256":   "-pred 1 -assoc 1 -jvpt 256  -history 256 -contextual 0 -dimcache 128 -poscache 8  " }
+
+            ]
+        },
+        "executable_file": "../../inputs/ss_files/applu.ss",
+        "input": "< ../../inputs/in_files/applu.in",
+        "max_instructions": 50000000
+    },
+    "cc1": {
+        "simulators": {
+            "spred": [
+                { "ex1_ppm_256":      "-pred 1 -jvpt 256  -contextual 1 -history 256 -pattern 4" },
+                { "ex1_lv":       "-pred 1 -jvpt 256  -contextual 1 -history 1 -pattern 4" },
+                { "ex2_ppm_32":       "-pred 1 -jvpt 256  -contextual 1 -history 32 -pattern 1" },
+                { "ex4_target_cache": "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 64 -poscache 1 " },
+                { "ex5_hybrid_32":    "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 128 -poscache 8  " },
+                { "ex6_hybrid_256":   "-pred 1 -assoc 1 -jvpt 256  -history 256 -contextual 0 -dimcache 128 -poscache 8  " }
+
+            ]
+        },
+        "executable_file": "../../inputs/ss_files/cc1.ss",
+        "input": "< ../../inputs/in_files/1stmt.i -O",
+        "max_instructions": 50000000
+    },
+    "apsi": {
+        "simulators": {
+            "spred": [
+                { "ex1_ppm_256":      "-pred 1 -jvpt 256  -contextual 1 -history 256 -pattern 4" },
+                { "ex1_lv":       "-pred 1 -jvpt 256  -contextual 1 -history 1 -pattern 4" },
+                { "ex2_ppm_32":       "-pred 1 -jvpt 256  -contextual 1 -history 32 -pattern 1" },
+                { "ex4_target_cache": "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 64 -poscache 1 " },
+                { "ex5_hybrid_32":    "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 128 -poscache 8  " },
+                { "ex6_hybrid_256":   "-pred 1 -assoc 1 -jvpt 256  -history 256 -contextual 0 -dimcache 128 -poscache 8  " }
+
+            ]
+        },
+        "executable_file": "../../inputs/ss_files/apsi.ss",
+        "input": "< ../../inputs/in_files/apsi.in",
+        "max_instructions": 50000000
+    },
     "hydro2d": {
         "simulators": {
             "spred": [
-                {
-                    "abc": "-pred 0 -jvpt 256 -contextual 1 -history 32 -pattern 1"
-                }
+                { "ex1_ppm_256":      "-pred 1 -jvpt 256  -contextual 1 -history 256 -pattern 4" },
+                { "ex1_lv":       "-pred 1 -jvpt 256  -contextual 1 -history 1 -pattern 4" },
+                { "ex2_ppm_32":       "-pred 1 -jvpt 256  -contextual 1 -history 32 -pattern 1" },
+                { "ex4_target_cache": "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 64 -poscache 1 " },
+                { "ex5_hybrid_32":    "-pred 1 -assoc 1 -jvpt 256  -history 32 -contextual 0 -dimcache 128 -poscache 8  " },
+                { "ex6_hybrid_256":   "-pred 1 -assoc 1 -jvpt 256  -history 256 -contextual 0 -dimcache 128 -poscache 8  " }
+
             ]
         },
         "executable_file": "../../inputs/ss_files/hydro2d.ss",
