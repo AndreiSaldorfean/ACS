@@ -127,7 +127,734 @@
 #include "misc.h"
 #include "machine.h"
 #include "spred.h"
+addrList news()
+{
+  return NULL;
+}
 
+addrList pushAddress(addrList p, md_addr_t addr, sword_t value)
+{
+  addrList q;
+  valueList r;
+  q=(addrList)malloc(sizeof(struct location));
+  q->addr=addr;
+  q->nextAddress=p;
+  r=(valueList)malloc(sizeof(struct element));
+  r->value=value;
+  r->freq = 1;
+  r->nextValue = NULL;
+  q->values = r;
+  return q;
+}
+
+void pushValue(addrList p, sword_t value)
+{
+  valueList q;
+  q=(valueList)malloc(sizeof(struct element));
+  q->freq = 1;
+  q->value=value;
+  q->nextValue=p->values;
+  p->values=q;
+}
+
+int foundValue(addrList l, sword_t value, int history, int distinct)
+{
+  int found = 0;
+  int i;
+  valueList q = l->values;	
+  valueList p = q->nextValue;
+  if(q->value == value)
+  {
+	  found = 1;
+	  loadValueLocality ++;
+  }
+  else if(history == 1)
+  {
+	  if(q != NULL)
+	  {
+		l->values = NULL;
+		free(q);
+	  }
+  }
+  for(i=1; i<history; i++)
+  {
+	  if( (p == NULL) || (found && distinct) )
+	  {
+		// the value always must be added to the list of not distinct values
+		if(!distinct)
+			found = 0;
+		break;
+	  }
+	  if(p->value == value)
+	  {
+	    if(!found)
+	        loadValueLocality ++;
+		found = 1;
+		if(distinct){
+			// the value is moved to the first position in the list of distinct values
+			q->nextValue = p->nextValue;
+			p->nextValue = l->values;
+			l->values = p;
+			break;
+		}
+	  }
+	  if(i == history-1)
+	  {
+	    q->nextValue = NULL;
+	    free(p);
+		// the value always must be added to the list of not distinct values
+		if(!distinct)
+			found = 0;
+	  }
+	  p=p->nextValue;
+	  q=q->nextValue;
+  }
+  return found;
+}
+
+
+int foundAddress(addrList l, md_addr_t addr, sword_t value, int history, int distinct)
+{
+
+  addrList p = l;
+  int found = 0;
+  while(p!=NULL)
+  {
+	if(p->addr == addr)
+	{
+	  found = 1;
+	  if(!foundValue(p, value, history, distinct))
+		pushValue(p, value);
+	  break;
+	}
+    p=p->nextAddress;
+  }
+  return found;
+}	
+
+JVPTaddrList pushJVPTAddress(JVPTaddrList p, md_addr_t addr)
+{
+  JVPTaddrList q;
+  q=(JVPTaddrList)malloc(sizeof(struct JVPTlocation));
+  q->addr=addr;
+  q->nextAddress=p;
+  q->values = NULL;
+  q->automat = 0;
+  return q;
+}
+
+void insertJVPTValue(JVPTaddrList ad, sword_t value, int history, int contextual)
+{
+  int i;
+  JVPTvalueList q = ad->values;	
+  JVPTvalueList p;
+  JVPTvalueList newValue;
+  if(!contextual || contextual == 2)	// stride or hybrid predictor
+  {
+	  if(ad->values != NULL)
+	  {
+		ad->stride[1] = ad->stride[0];
+		ad->stride[0] = value - q->value;
+	  }
+  }
+  if(history == 1)
+  {
+	  if(ad->values != NULL)
+	  {
+			q->value = value;
+			return;	
+	  }
+  } 
+  else if(q != NULL)
+  {
+	p = q->nextValue;
+    for(i=1; i<history; i++)
+	{
+	  if(p == NULL) break;
+	  if(i == history-1)
+	  {
+	    q->nextValue = NULL;
+	    free(p);
+		break;
+	  }
+	  p=p->nextValue;
+	  q=q->nextValue;
+	}
+  }	
+  newValue=(JVPTvalueList)malloc(sizeof(struct JVPTelement));
+  newValue->value=value;
+  newValue->nextValue=ad->values;
+  ad->values=newValue;  	
+}
+
+sword_t maxValue(JVPTvalueList p)
+{
+	JVPTvalueList q = p;
+	int maximumCount = p->count;
+	sword_t maximumValue = p->value;
+	while(q != NULL)
+	{
+		if(q->count > maximumCount)
+		{
+			maximumCount = q->count;
+			maximumValue = q->value;
+		}
+		q = q->nextValue;
+	}
+	return maximumValue;
+}
+
+sword_t predictValue(JVPTaddrList p, int history, int contextual, int pattern)
+{
+	int i,j;
+	JVPTvalueList q = p->values;
+	if(!contextual && p->stride[0] == p->stride[1])		// stride prediction
+		return q->value + p->stride[0];
+	if(history == 1 && q != NULL)	// last value prediction
+		return q->value;
+	if(contextual && history>1 && q != NULL)	// contextual or hybrid prediction
+	{
+		int currentPattern = pattern;
+		while(currentPattern > 0)
+		{
+			JVPTvalueList patternValueList = NULL;
+			for(i=0; i<history-currentPattern; i++)
+			{
+				JVPTvalueList k;
+				JVPTvalueList patternValues;
+				int isPattern;
+				if(q == NULL)
+					break;
+				k = q->nextValue;
+				patternValues = p->values;
+				isPattern = 1;
+				for(j=0; j<currentPattern; j++)
+				{
+					if(k != NULL && patternValues != NULL)
+					{
+						if(k->value != patternValues->value)
+						{
+							isPattern = 0;
+							break;
+						}
+					}
+					else 
+					{
+						isPattern = 0;
+						break;					
+					}
+					k = k->nextValue;
+					patternValues = patternValues->nextValue;
+				}
+				if(isPattern)
+				{
+					JVPTvalueList newValue;
+					if(patternValueList == NULL)	// insert the value
+					{
+						newValue=(JVPTvalueList)malloc(sizeof(struct JVPTelement));
+						newValue->value = q->value; // the value which follows the pattern
+						newValue->count = 1;
+						newValue->nextValue = patternValueList;
+						patternValueList = newValue;
+					}
+					else
+					{
+						int found = 0;
+						JVPTvalueList temp = patternValueList;
+						while(temp != NULL)
+						{
+							if(temp->value == q->value)
+							{
+								temp->count++;
+								found = 1;
+								break;
+							}
+							temp = temp->nextValue;
+						}
+						if(!found)	// insert the value
+						{
+							newValue=(JVPTvalueList)malloc(sizeof(struct JVPTelement));
+							newValue->value = q->value; // the value which follows the pattern
+							newValue->count = 1;
+							newValue->nextValue = patternValueList;
+							patternValueList = newValue;
+						}
+					}
+				}
+				q = q->nextValue;
+			}
+			if(patternValueList != NULL)
+				return maxValue(patternValueList);	// contextual prediction
+			currentPattern--;
+		}
+		if(contextual == 2 && p->stride[0] == p->stride[1])	// stride prediction of hybrid predictor
+			return p->values->value + p->stride[0];
+		else return p->values->value;	// the last value
+	}
+	return 0;
+}
+
+void freeValueList(JVPTvalueList *values)
+{
+	JVPTvalueList p = *values;
+	JVPTvalueList q;
+	while(p != NULL)
+	{
+		q = p->nextValue;
+		free(p);
+		p = q;
+	}
+
+}
+
+int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPTaddrList *jvpt, int JVPTdim, int contextual, int pattern)
+{
+
+  JVPTaddrList p = *jvpt;
+  JVPTaddrList q; 
+  int i;
+  int found = 0;
+  if(*jvpt == NULL)
+	  return found;
+  if(p->addr == addr)
+  {
+		found = 1;
+		if(p->values != NULL)
+		{
+			if(value == predictValue(p, history, contextual, pattern))
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+				{
+					valuePrediction++;
+					classifiedPred++;
+					predictable++;
+				}
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+					classifiedUnpred++;
+				if(p->automat < 3) 
+					p->automat++;
+			}
+			else
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+					classifiedPred++;
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+				{
+					classifiedUnpred++;
+					wpredicted++;
+				}
+				if(p->automat > 0)
+					p->automat--;
+			}
+		}
+		else
+		{
+			if(p->automat > 0)
+				p->automat--;
+		}
+		insertJVPTValue(p, value, history, contextual);
+		return found;
+  }  
+  else
+  {
+	q = p->nextAddress;
+    for(i=1;; i++)
+	{
+		if( (q == NULL) || (i == JVPTdim) ) break;
+		if(q->addr == addr)
+		{
+			found = 1;
+			if(q->values != NULL)
+			{
+				if(value == predictValue(q, history, contextual, pattern))
+				{
+					if(q->automat == 2 || q->automat == 3) /* predictable */
+					{
+						valuePrediction++;
+						classifiedPred++;
+						predictable++; 
+					}
+					if(q->automat == 0 || q->automat == 1) /* unpredictable */
+						classifiedUnpred++;
+					if(q->automat < 3) 
+						q->automat++;
+				}
+				else
+				{
+					if(q->automat == 2 || q->automat == 3) /* predictable */
+						classifiedPred++;
+					if(q->automat == 0 || q->automat == 1) /* unpredictable */
+					{
+						classifiedUnpred++;
+						wpredicted++;
+					}
+					if(q->automat > 0)
+						q->automat--;
+				}
+			}
+			else
+			{
+				if(q->automat > 0)
+					q->automat--;				
+			}
+			insertJVPTValue(q, value, history, contextual);
+			/* the address is moved to the first position in the list */
+			p->nextAddress = q->nextAddress;
+			q->nextAddress = *jvpt;
+			*jvpt = q;
+			break;
+		}
+		if(i == JVPTdim-1)
+		{
+			p->nextAddress = NULL;
+			free(q);
+			break;
+		}
+	    p=p->nextAddress;
+		q = q->nextAddress;
+		}
+	 }
+	 return found;
+}
+
+/* JVPT initialization */
+JVPTaddrList JVPTinit(JVPTaddrList l, int JVPTdim)
+{
+	int i;
+	for(i=0; i<JVPTdim; i++)
+		l = pushJVPTAddress(l, 0);
+	return l;
+}
+
+void insertIntoDirrectMappedJVPT(md_addr_t addr, sword_t value, int history, JVPTaddrList *jvpt, int contextual, int JVPTdim, int pattern)
+{
+
+	JVPTaddrList p = *jvpt;
+	JVPTvalueList q;
+	int index;
+	int i;
+	index = addr % JVPTdim;
+	for(i=0; i<index; i++)
+		p = p->nextAddress;
+	if(p != NULL)
+	{
+		if(p->addr != addr)
+		{
+			p->addr = addr;
+			q = p->values;
+			p->values = NULL;
+			freeValueList(&q);
+			p->automat = 0;
+		}
+		if(p->values != NULL)
+		{
+			if(value == predictValue(p, history, contextual, pattern))
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+				{
+					valuePrediction++;
+					classifiedPred++;
+					predictable++;
+				}
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+					classifiedUnpred++;
+				if(p->automat < 3) 
+					p->automat++;
+			}
+			else
+			{
+				if(p->automat == 2 || p->automat == 3) /* predictable */
+					classifiedPred++;
+				if(p->automat == 0 || p->automat == 1) /* unpredictable */
+				{
+					classifiedUnpred++;
+					wpredicted++;
+				}				
+				if(p->automat > 0)
+					p->automat--;
+			}
+		}
+		else
+		{			
+			if(p->automat > 0)
+				p->automat--;
+		}
+		insertJVPTValue(p, value, history, contextual);
+	}
+
+}
+
+/*** stabilirea aritatii ***/
+
+int foundAddress_INDIR(addrList l, md_addr_t addr, sword_t value, int history)
+{
+  addrList p = l;
+  int found = 0;
+  while(p!=NULL)
+  {
+	if(p->addr == addr)
+	{
+	    found = 1;
+		if(!foundValue_INDIR(p, value, history))
+			pushValue(p, value);
+		break;
+	}
+    p=p->nextAddress;
+  }
+  return found;
+}
+
+int foundValue_INDIR(addrList l, sword_t value, int history)
+{
+  int found = 0;
+  int i;
+  valueList q = l->values;	
+  valueList p = q->nextValue;
+  if(q->value == value)
+  {
+	  found = 1;
+	  INDIRValueLocality ++;
+	  q->freq++;
+  }
+  else /*if(history == 1)
+  {
+	  if(q != NULL)
+	  {
+		l->values = NULL;
+		free(q);
+	  }
+  }*/
+  for(i=1; /*i<history*/; i++)
+  {
+	  if(p == NULL) break; // nu mai exista elemente in lista de valori
+	  if(p->value == value)
+	  {
+	    if(!found)
+	    {	
+	     found = 1;
+	     INDIRValueLocality ++;
+		 p->freq++;
+		 break;
+	    } 
+	  }
+	  /*if(i == history-1)
+	  {
+	    q->nextValue = NULL;
+	    free(p);
+	  }*/
+	  p=p->nextValue;
+	  q=q->nextValue;
+  }
+  return found;
+}
+
+void aritate_Address(addrList l)
+{
+  addrList p = l;
+  valueList q;
+  long monomorfe_s = 0,duomorfe_s = 0,polimorfe_s = 0,i,suma_verif = 0;
+  long monomorfe_d = 0,duomorfe_d = 0,polimorfe_d = 0,temp_m, temp_d=0, temp_p=0;
+
+  while(p!=NULL)	
+  {
+	q = p->values;
+	i = 0;
+	temp_m=0;
+    fprintf(stderr,"\nAlt__PC 0x%x \n",p->addr);
+	while(q!=NULL)
+	{
+
+		suma_verif+=q->freq;
+		i++;
+		fprintf(stderr,"i=%ld Target 0x%x  freq = %d\n",i,q->value,q->freq);
+		temp_m+=q->freq;
+		q = q->nextValue;
+	}
+ 	if(i==0)
+		printf("Prostie");
+	else
+		if(i==1)
+		{
+			monomorfe_s++;
+			monomorfe_d+=temp_m;
+		}
+		else
+			if(i==2)
+			{
+				duomorfe_d+=temp_m;
+				duomorfe_s++;
+			}
+			else
+			{
+				polimorfe_s++;
+				polimorfe_d+=temp_m;
+			}
+	p = p->nextAddress;
+  }
+  fprintf(stderr,"monomorfe_s %d duomorfe_s %d polimorfe_s %d \n suma verificare %d",monomorfe_s,duomorfe_s,polimorfe_s,suma_verif);
+  fprintf(stderr,"monomorfe_d %d duomorfe_d %d polimorfe_d %d ",monomorfe_d,duomorfe_d,polimorfe_d);
+}
+
+/*****/
+/* PPM value predictor stats */
+void
+vpred_ppm_stats(struct stat_sdb_t *sdb)	/* stats database */
+{
+
+/*/  stat_reg_counter(sdb, "loadValueLocality",
+		   "total number of before seen load values",
+		   &loadValueLocality, 0, NULL);*/
+  stat_reg_counter(sdb, "JIndirValueLocality",
+		   "jindir value locality",
+		   &INDIRValueLocality, 0, NULL);
+  stat_reg_counter(sdb, "valuePrediction",
+		   "total number of correctly predicted values",
+		   &valuePrediction, 0, NULL);
+  stat_reg_counter(sdb, "classifiedPred",
+		   "number of loads classified as predictable",
+		   &classifiedPred, 0, NULL);
+  stat_reg_counter(sdb, "classifiedUnpred",
+		   "number of loads classified as unpredictable",
+		   &classifiedUnpred, 0, NULL);
+  stat_reg_counter(sdb, "predictable",
+		   "correctly classified predictable loads",
+		   &predictable, 0, NULL);
+  stat_reg_counter(sdb, "wpredicted",
+		   "wrong predicted JIndir's",
+		   &wpredicted, 0, NULL);
+}
+
+/************************
+	Target Cache
+************************/
+IVPTCache pushIVPTCacheLocation(IVPTCache p)
+{
+  IVPTCache q;
+  q=(IVPTCache)malloc(sizeof(struct IVPTlocation));
+  q->nextPos=p;
+  q->valueList = NULL;
+  return q;
+}
+
+void insertIVPTValue(IVPTCache ad, md_addr_t addr,md_addr_t tag, int nposcache)
+{
+  int i;
+  IVPTValueList q = ad->valueList;	
+  IVPTValueList p;
+  IVPTValueList newValue;
+  if(nposcache == 1)
+  {
+	  if(ad->valueList != NULL)
+	  {		  
+		  q->addr = addr;
+		  q->tag = tag;
+		  return;	
+	  }
+  }
+  
+  else if(q != NULL)
+  {
+	p = q->nextPos;
+    for(i=1; i<nposcache; i++)
+	{
+	  if(p == NULL) break;
+	  if(q->tag == tag)
+	  {
+	    q->addr = addr;
+	    return;
+	  }
+
+	  if(i == nposcache-1)
+	  {
+	    q->nextPos= NULL;
+	    free(p);
+		break;
+	  }
+	  p=p->nextPos;
+	  q=q->nextPos;
+	}
+
+  }
+	
+  newValue=(IVPTValueList)malloc(sizeof(struct IVPTelement));
+  newValue->addr = addr;
+  newValue->tag = tag;
+  newValue->nextPos=ad->valueList;
+  ad->valueList = newValue;  	
+
+}
+
+sword_t TCPredictValue(IVPTCache p,md_addr_t tag ,int nposcache)
+{
+	int i;
+	IVPTValueList q = p->valueList;
+
+	if(nposcache == 1 && q != NULL)
+		if(tag == q->tag)
+			return q->addr;
+		else
+			return -1;
+	else if(nposcache > 1 && q != NULL)	
+	{
+		for(i=0; i<nposcache; i++)
+		{
+			if(q == NULL)
+				break;
+
+			if(tag == q->tag)
+				return q->addr;
+				
+			q = q->nextPos;
+		}
+		return -1;
+	}
+	return -1;
+}
+
+IVPTCache IVPTinit(IVPTCache l, int dimcache)
+{
+	int i;
+	for(i=0; i<dimcache; i++)
+		l = pushIVPTCacheLocation(l);
+	return l;
+}
+
+void insertIntoDirrectMappedTargetCache(md_addr_t addr, md_addr_t tag, int index , int dimcache , int nposcache)
+{
+
+	IVPTCache p = ivpt;
+	int i;
+	for(i=0; i<index; i++)
+		p = p->nextPos;
+	if(p != NULL)
+	{
+		if(p->valueList != NULL)
+		{
+			if(addr == TCPredictValue(p, tag ,nposcache))
+			{
+				valuePrediction++;
+			}
+			else
+			{
+				insertIVPTValue(p, addr, tag, nposcache);
+			
+			}
+		}
+		else
+			insertIVPTValue(p, addr, tag, nposcache);
+		
+	}
+
+}
+
+/* target cache value predictor stats */
+void
+vpred_tc_stats(struct stat_sdb_t *sdb)	/* stats database */
+{
+	stat_reg_counter(sdb, "valuePrediction",
+		   "total number of correctly predicted values",
+		   &valuePrediction, 0, NULL);
+}
 /* turn this on to enable the SimpleScalar 2.0 RAS bug */
 /* #define RAS_BUG_COMPATIBLE */
 
@@ -1051,396 +1778,4 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	  pbtb->target = btarget;
 	}
     }
-}
-
-
-// last value prediction
-
-bool_t init_lvp(lvp_table *lvp, u_int16_t num_sets, u_int16_t num_ways, u_int8_t history_len, replacement_policy policy, value_predictor_type type) {
-
-    lvp->num_sets = num_sets;
-    lvp->num_ways = num_ways;
-    lvp->policy = policy;
-    lvp->total_loads = 0;
-    lvp->locality_hits = 0;
-    lvp->predictor_type = type;
-
-    if(type == STRIDE)
-        lvp->history_len = 1;
-    else lvp->history_len = history_len;
-
-
-    lvp->sets = malloc(num_sets * sizeof(lvp_entry*));
-
-    lvp->next_way = malloc(num_sets * sizeof(u_int16_t));
-
-    if(!lvp->sets || !lvp->next_way)
-        return 0;
-
-    for(int s = 0; s < num_sets; s++) {
-
-        lvp->sets[s] = malloc(num_ways * sizeof(lvp_entry));
-
-        if(!lvp->sets[s])
-            return 0;
-        
-        lvp->next_way[s] = 0; // first element to be removed if needed
-
-        for(int w = 0; w < num_ways; w++) {
-
-            
-            lvp->sets[s][w].tag = 0;
-            lvp->sets[s][w].hist_pos = 0;
-            lvp->sets[s][w].hist_count = 0;
-            lvp->sets[s][w].valid = 0;
-            lvp->sets[s][w].last_used = 0; 
-            lvp->sets[s][w].history = malloc(history_len * sizeof(word_t));
-            lvp->sets[s][w].size = history_len;
-
-            if(!lvp->sets[s][w].history)
-                return 0;
-
-            for(int i = 0; i <  history_len; i++)
-                lvp->sets[s][w].history[i] = 0;
-
-        }
-
-    }
-
-    return 1;
-
-}
-
-u_int16_t _select_way_to_replace(lvp_table *lvp, u_int16_t set){
-
-    u_int16_t way = 0;
-
-    switch(lvp->policy) {
-
-        case FIFO: 
-            u_int16_t w = lvp->next_way[set];
-            lvp->next_way[set] = (w + 1) % lvp->num_ways;
-            way = w;
-            break;
-
-        case RANDOM:
-            way =  rand() % lvp->num_ways;
-            break;
-        
-        case LRU:
-            u_int16_t oldest = 0;
-            for(u_int16_t w = 1; w < lvp->num_ways; w++){
-                if(lvp->sets[set][w].last_used < lvp->sets[set][oldest].last_used)
-                    oldest = w;
-            }
-            way = oldest;
-            break;
-        
-
-    }
-
-    return way;
-
-}
-
-
-u_int16_t select_way_to_insert(lvp_table* lvp, u_int16_t set){
-
-    // check the ways for that set (the set is fully associative, the first entry with valid=0 gets selected)
-
-    for(u_int16_t w = 0; w < lvp->num_ways; w++){
-
-        if(lvp->sets[set][w].valid == 0)
-            return w; // this entry wasn't used yet
-
-    }
-
-    // all ways are full, use replacement policy
-    return _select_way_to_replace(lvp, set);
-
-}
-
-void update_lvp(lvp_table *lvp, word_t indexer, word_t value) {
-
-    u_int16_t set = indexer % lvp->num_sets;
-    word_t tag = indexer / lvp->num_sets;
-
-    lvp->total_loads++;
-
-    // search existing entry
-
-    for(u_int16_t w = 0; w < lvp->num_ways; w++){
-
-        lvp_entry *entry = &lvp->sets[set][w];
-
-        if(entry->valid && entry->tag == tag){
-            
-            bool_t hit = 0;
-
-            for(int i = 0; i < entry->hist_count; i++){
-
-                if(entry->history[i] == value){
-                    hit = 1;
-                    break;
-                }
-
-            }
-
-            if(hit) lvp->locality_hits++;
-
-            else {
-
-                // update strides for new insert
-
-                // previous becomes current, current becomes value - what is the newest value in the history (before inserting)
-
-                entry->previous_stride = entry->stride;
-                entry->stride = value - entry->history[(entry->hist_pos - 1 + lvp->history_len) % lvp->history_len];
-
-                // add new value
-                entry->history[entry->hist_pos] = value;
-
-                entry->hist_pos = (entry->hist_pos + 1) % lvp->history_len; // circular buffer
-
-
-
-                if(entry->hist_count < lvp->history_len)
-                    entry->hist_count++;
-
-
-
-            }
-
-            entry->last_used = lvp->total_loads; // lru
-
-            return;
-
-        }
-
-    }
-
-    // no match if we got here, must replace or insert (if not full)
-    u_int16_t way = select_way_to_insert(lvp, set);
-
-    lvp_entry* entry  = &lvp->sets[set][way];
-
-    entry->tag = tag;
-    entry->valid = 1;
-    entry->hist_pos = 0;
-    entry->hist_count = 1;
-    entry->history[entry->hist_pos] = value;
-    entry->hist_pos = (entry->hist_pos + 1) % lvp->history_len;
-    entry->last_used = lvp->total_loads;
-  
-    // reset stride prediction 
-    entry->stride = 0;
-    entry->previous_stride = 0;
-    entry->confidence = 0;
-}
-
-double load_value_locality(lvp_table *lvp){
-  return 100.0 * lvp->locality_hits / lvp->total_loads;
-}
-
-void destroy_lvp(lvp_table* lvp){
-
-    for(u_int16_t s = 0; s < lvp->num_sets; s++){
-
-        for(u_int16_t w = 0; w < lvp->num_ways; w++)
-            free(lvp->sets[s][w].history);
-        
-        free(lvp->sets[s]);
-
-    }
-
-    free(lvp->sets);
-    free(lvp->next_way);
-
-}
-
-
-word_t predict_value(lvp_table *lvp, word_t indexer,  u_int32_t pattern) {
-
-  word_t predicted = 0;
-
-  u_int16_t set = indexer % lvp->num_sets;
-  word_t tag = indexer / lvp->num_sets;
-
-  for(u_int16_t w = 0; w < lvp->num_ways; w++) {
-        lvp_entry *entry = &lvp->sets[set][w];
-        if(entry->valid && entry->tag == tag) {
-            if(lvp->predictor_type == STRIDE && entry->hist_count >= 3 && entry->stride == entry->previous_stride){ // incremental, strides are the same
-
-                int last_index = (entry->hist_pos - 1 + lvp->history_len) % lvp->history_len;
-                return entry->history[last_index] + entry->stride;
-
-            }
-
-            if(lvp->history_len == 1) { // last value prediction (if contextual with a history of 1 value)
-
-                int last_index = (entry->hist_pos - 1 + lvp->history_len) % lvp->history_len;
-                return entry->history[last_index]; 
-
-            }
-
-            
-            else {
-
-            
-
-                // look for a pattern based on a pattern size
-                // say we have the following values, 10, 13, 14, 2, 4, 10, 13, 16, 3, 0, 9, 10, 13, 14, 8, 9, 10, 13 
-                // and a pattern history of 2
-                // if we look closely, we can see that after [10, 13] we get 14 twice and 16 once, so we will predict 14
-
-                // using structs to keep track of candidates
-                typedef struct {
-
-                  word_t value; // the value appearing
-                  counter_t count; // how many times it appeared
-
-                } candidate_t;
-
-                candidate_t* candidates = (candidate_t*) malloc(sizeof(candidate_t) * entry->hist_count);
-                int number_of_candidates = 0;
-
-                for(int i = 0; i < entry->hist_count - pattern; i++) {
-
-                    int match = 1;
-                    for (int j = 0; j < pattern; j++){
-
-                      if(get_history(entry, entry->hist_count - pattern + j) != get_history(entry, i + j)){
-                        match = 0;
-                        break;
-                      }
-
-                    }
-
-                    if(match){
-
-                       // value after pattern
-                       word_t next_value = get_history(entry, i + pattern);
-
-                       int found = 0;
-                       for(int c = 0; c < number_of_candidates; c++){
-                        
-                        if(candidates[c].value == next_value){
-                          candidates[c].count++;
-                          found = 1;
-                          break;
-                        }
-                        
-                        if(!found){
-                          candidates[number_of_candidates].value = next_value;
-                          candidates[number_of_candidates].count = 0;
-                          number_of_candidates++;
-                        }
-
-
-                       }
-
-                    }
-
-                    // pick most frequent value
-                    if(number_of_candidates == 0){ // pattern not found
-
-                      free(candidates);
-
-                      return entry->history[(entry->hist_pos - 1 + lvp->history_len) % lvp->history_len]; // last value prediction (fallback)
-
-                    }
-                    
-                    word_t best = candidates[0].value;
-                    int max_count  = candidates[0].count;
-
-                    for(int c = 1; c < number_of_candidates; c++){
-
-                      if(candidates[c].count > max_count){
-                        max_count = candidates[c].count;
-                        best = candidates[c].value;
-                      }
-
-                    }
-
-
-                    free(candidates);
-
-                    return best;
-                  
-                }
-
-            }
-        
-        }      
-    }
-
-    return 0; // cannot predict
-
-}
-
-word_t get_history(lvp_entry* entry, int logical_index) {
-    // logical_index: 0 = oldest, hist_count-1 = newest
-    return entry->history[(entry->hist_pos - entry->hist_count + logical_index + entry->size) % entry->size];
-}
-
-/**
- * Mutates `lvp` objects confidence and prediction related statistics based on whether the `predicted` value is equal
- * to `value`. Uses the `indexer` to access the entry that holds the value
- */
-void update_prediction_confidence(lvp_table* lvp, word_t indexer, word_t value, word_t predicted) {
-
-  lvp_entry *entry;
-
-  u_int16_t set = indexer % lvp->num_sets;
-  word_t tag = indexer / lvp->num_sets;
-
-  for(u_int16_t w = 0; w < lvp->num_ways; w++) {
-        entry = &lvp->sets[set][w]; // find entry
-        if(entry->tag == tag)
-          break;
-  }
-
-  if(entry->hist_count == 0 || !entry->valid) // decrease confidence when not having enough data 
-    if(entry->confidence > 0)
-      entry->confidence--;
-
-
-
-  // we have the entry, time to update
-  if(value == predicted){ // correct prediction
-
-    if(entry->confidence == 2 || entry->confidence == 3) { // confidence high, it did do the prediction, and it did it correctly too
-
-        lvp->correct_predictions++; // correct prediction
-        lvp->loads_predictable++; // this load was classified as predictable (confidence >= 2)
-        lvp->correct_predictable++; // the predictor classified correctly
-
-    }
-
-    else{
-      lvp->loads_unpredictable++; // classified load as unpredictable
-    }
-
-    if(entry->confidence < 3) // 2 bit saturating counter
-      entry->confidence++;
-
-  }
-
-  else {
-
-    if(entry->confidence == 2 || entry->confidence == 3) // classified as predictable
-        lvp->loads_predictable++;
-
-    else { // unpredictable
-
-        lvp->loads_unpredictable++;
-        lvp->correct_unpredictable++;
-
-    }
-
-    if(entry->confidence > 0)
-      entry->confidence--;
-
-  }
-
 }

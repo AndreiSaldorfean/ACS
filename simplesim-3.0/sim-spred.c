@@ -85,12 +85,49 @@
 #include "spred.h"
 #include "sim.h"
 
-
+IVPTCache ivpt;
 
 /*
  * This file implements a branch predictor analyzer.
  */
+/* declaration of list of addresses for indirect jumps and load value locality */
+addrList l,l_INDIR,l_CTRL;
 
+/* declaration of list */
+JVPTaddrList jvpt;
+
+/* dimension of JVPT */
+static int JVPTdim;
+
+/* type of predictor */
+static int contextual;
+
+/* size of pattern */
+static int pattern;
+
+/* dim of target cache*/
+static int dimcache;
+
+/* number of positions in cache*/
+static int nposcache;
+
+/* what to do? */
+static int predict;	/* 1-prediction; 0-not distinct load value locality; 2-distinct load value locality */
+
+/* type of JVPT */
+static int isAssoc;		/* 1-associative; 0-dirrect mapped */
+
+/* load value history */
+static int history;
+
+/* which address? */
+static int memAddress;  /* 1-memory address; 0-instruction address (PC); */
+
+/* total number of jumps executed */
+static counter_t sim_num_jumps= 0;
+static counter_t sim_num_loads= 0;
+/* total number of indirect jumps executed */
+static counter_t sim_indir_refs = 0;
 /* simulated registers */
 static struct regs_t regs;
 
@@ -102,19 +139,6 @@ static unsigned int max_insts;
 
 /* branch predictor type {nottaken|taken|perfect|bimod|2lev} */
 static char *pred_type;
-
-///////////////////////////////////// ADDED /////////////////////
-
-/* store accesses */
-static counter_t store_accesses = 0;
-
-/* load accesses */
-static counter_t load_accesses = 0;
-
-/* load or store? */
-static unsigned int stat_ld;
-
-//////////////////////////////////////////////////////////////////
 
 /* bimodal predictor config (<table_size>) */
 static int bimod_nelt = 1;
@@ -148,127 +172,13 @@ static counter_t sim_num_refs = 0;
 /* total number of branches executed */
 static counter_t sim_num_branches = 0;
 
-/* flag for whether to show stores or loads */
-static int opt_flags = 0; 
-
-
-
-
-
-
-////////////////////  CONFIGURABLE /////////////////////////
-
-
-/* associativity of lvp */
-static unsigned int lvp_associatvity = 0;
-
-/* number of sets for lvp */
-static unsigned int lvp_sets = 0;
-
-/* history length*/
-static unsigned int history_length = 1;
-
-/* locality */
-static counter_t locality;
-
-
-/* replacement policy */
-static char lvpred_replacement = 'l';
-
-static replacement_policy policy;
-
-//////////////////////////////////////////////
-
-
-////////////////   INPUT  ///////////////////
-
-
-static char* lvpred_opt;
-
-////////////////////////////////////////
-
-//////////////// LVPRED ////////////////////////
-
-static lvp_table lvp;
-
-/////////////////////////////////////////////////////////
-
-////////////// SPRED ///////////////////
-
-
-static int mem_address = 0; /* 1 - memory address, 0 - instruction address*/
-
-static int contextual = 0; /* 1 - contextual, 0 - incremental */
-
-static int pattern = 3; /* used by contextual */
-
-/* what to do? */
-static int predict = 0;	/* 1-prediction; 0-determining load value locality */
-
-/* type of LVPT */
-static int is_assoc = 0;		/* 1-associative; 0-dirrect mapped */
-
-
-/* Total number of correctly predicted loads */
-static counter_t value_prediction = 0;
-
-/* Total number of loads classified as predictable */
-static counter_t classified_pred = 0;
-
-/* Total number of loads classified as unpredictable */
-static counter_t classified_unpred = 0;
-
-/* Total number of correctly classified predictable loads */
-static counter_t predictable = 0;
-
-/* Total number of correctly classified unpredictable loads */
-static counter_t unpredictable = 0;
-
-
-static unsigned int lvpt_size = 256;
-
-static counter_t T1 = 0;
-
-static counter_t T2 = 0;
-
-static double localityPercentage;
-
-
-static double lvpt_prediction_acc;
-///////////////////////////////////////
-
-
-static counter_t npenload=1;
-static counter_t foundA=0;
-
-static counter_t foundA_miss=0;
-static counter_t notfoundA=0;
-float S;
-
-int Factor_Complexitate_Arhitectura = 1;
-static int Tacces_incremental;
-static int Tacces_contextual;
-static int Tacces_hibrid;
-
-static int Tacces_predictor;
-
-static int Tacces_DRAM = 50; // suppose 50ns
-
-
-static double predictablePerc;
-
-static double unpredictablePerc;
-
-void compute_predict_stats();
-void computeSpeedup();
-
 
 /* register simulator-specific options */
 void
 sim_reg_options(struct opt_odb_t *odb)
 {
   opt_reg_header(odb, 
-"sim-lvpred: This simulator implements a last value predictor analyzer.\n"
+"sim-bpred: This simulator implements a branch predictor analyzer.\n"
 		 );
 
   /* branch predictor options */
@@ -287,45 +197,32 @@ sim_reg_options(struct opt_odb_t *odb)
 "      gshare  : 1, W, 2^W, 1\n"
 "  Predictor `comb' combines a bimodal and a 2-level predictor.\n"
                );
-               
-   //////////////////    ADDED //////////////////////////////////
 
-   /* history length */
-   opt_reg_uint(odb, "-history", "history length for last value predictor. defaults to 1.",
-   		&history_length, 
-   		/* default */ 1,
-   		/* print */ TRUE,
-   		/* format */ NULL);
-
-  opt_reg_note(odb, 
-  "  Last Value Predictor uses internally a cache like structure. In order to edit it, you have to use the following format: \n\n"
-  "   cache:<sets>:<assoc>:<repl> \n\n"
-  "   <sets>  - number of sets for the cache (1 set yields a fully associative cache)\n"
-  "   <assoc> - associativity of the cache (1 associativity yields a direct mapped cache) \n"
-  "   <repl>  - replacement policy, `l`-LRU, `f`-FIFO, `r`-Random\n\n"
-  "   Examples:   -lvpred:cache cache:2:4:r\n"
-  "               -lvpred:cache cache:4:8:l\n"
-  "");
-
-  // SPRED //
-
-  opt_reg_uint(odb, "-memaddr", "address type {0-instruction address| 1-memory address}",
-	       &mem_address, /* default */0,
+  /* instruction limit */
+  opt_reg_uint(odb, "-max:inst", "maximum number of inst's to execute",
+	       &max_insts, /* default */0,
+	       /* print */TRUE, /* format */NULL);
+  opt_reg_uint(odb, "-memaddr", "address type {0-instr. address| 1-memory address}",
+	       &memAddress, /* default */0,
 	       /* print */TRUE, /* format */NULL);
 
-  opt_reg_uint(odb, "-pred", "what to do {0-load value locality| 1-prediction}",
-	       &predict, /* default */0,
+  opt_reg_uint(odb, "-pred", "what to do {0-not distinct locality| 1-prediction}",
+	       &predict, /* default */1,
 	       /* print */TRUE, /* format */NULL);
 
   opt_reg_uint(odb, "-assoc", "table type {0-dirrect mapped| 1-associative}",
-	       &is_assoc, /* default */1,
+	       &isAssoc, /* default */1,
 	       /* print */TRUE, /* format */NULL);
 
-  opt_reg_uint(odb, "-lvpt", "dimension of LVPT",
-	       &lvpt_size, /* default */4,
+  opt_reg_uint(odb, "-history", "maximum number of values memorized for an address",
+	       &history, /* default */1,
 	       /* print */TRUE, /* format */NULL);
 
-  opt_reg_uint(odb, "-contextual", "type of predictor",
+  opt_reg_uint(odb, "-jvpt", "dimension of JVPT",
+	       &JVPTdim, /* default */4,
+	       /* print */TRUE, /* format */NULL);
+
+  opt_reg_uint(odb, "-contextual", "predictor type {0-targetcache| 1-contextual }",
 	       &contextual, /* default */1,
 	       /* print */TRUE, /* format */NULL);
 
@@ -333,26 +230,13 @@ sim_reg_options(struct opt_odb_t *odb)
 	       &pattern, /* default */3,
 	       /* print */TRUE, /* format */NULL);
 
-
-  // SPRED //
-
-  opt_reg_string(odb, "-lvpred:cache", "config for lvpred cache, cache:<sets>:<assoc>:<repl>",
-    &lvpred_opt, "cache:1:8:f", TRUE, NULL);
-
-  
-  
-  
-
-  ////////////////////////////////////////////////////////////////////
-
-  /* instruction limit */
-  opt_reg_uint(odb, "-max:inst", "maximum number of inst's to execute",
-	       &max_insts, /* default */0,
+  opt_reg_uint(odb, "-dimcache", "dimension of target cache",
+	       &dimcache, /* default */1,
 	       /* print */TRUE, /* format */NULL);
 
-  opt_reg_uint(odb, "-contor:LD", "registers stats for load or store (0 for store, 1 for load)",
-  		&stat_ld, 0, TRUE, NULL);
-
+  opt_reg_uint(odb, "-poscache", "number of positions in target cache",
+	       &nposcache, /* default */1,
+	       /* print */TRUE, /* format */NULL);
   opt_reg_string(odb, "-bpred",
 		 "branch predictor type {nottaken|taken|bimod|2lev|comb}",
                  &pred_type, /* default */"bimod",
@@ -466,28 +350,7 @@ sim_check_options(struct opt_odb_t *odb, int argc, char **argv)
     }
   else
     fatal("cannot parse predictor type `%s'", pred_type);
-
-  if(sscanf(lvpred_opt, "cache:%d:%d:%c",
-    &lvp_sets, &lvp_associatvity, &lvpred_replacement) != 3)
-      fatal("bad lvpred cache params: cache:<sets>:<assoc>:<repl>");
-  
-  // policy
-  if(lvpred_replacement == 'r')
-      policy = RANDOM;
-  
-  else if(lvpred_replacement == 'l')
-      policy = LRU;
-  
-  else if(lvpred_replacement == 'f')
-      policy = FIFO;
-
-  else
-      fatal("Unknown replacement policy");
-
-  
-  
 }
-
 
 /* register simulator-specific statistics */
 void
@@ -496,24 +359,9 @@ sim_reg_stats(struct stat_sdb_t *sdb)
   stat_reg_counter(sdb, "sim_num_insn",
 		   "total number of instructions executed",
 		   &sim_num_insn, sim_num_insn, NULL);
-		   
-
   stat_reg_counter(sdb, "sim_num_refs",
 		   "total number of loads and stores executed",
 		   &sim_num_refs, 0, NULL);
-		   
-  if(stat_ld == 0) {
-  	stat_reg_counter(sdb, "sim_store_refs",
-  		   "total number of stores executed",
-  		   &store_accesses, 0, NULL);
- 
-  }
-  else {
-  	stat_reg_counter(sdb, "sim_load_refs",
-  		   "total number of loads executed",
-  		   &load_accesses, 0, NULL);
-  	
-  }	   
   stat_reg_int(sdb, "sim_elapsed_time",
 	       "total simulation time in seconds",
 	       &sim_elapsed_time, 0, NULL);
@@ -528,99 +376,38 @@ sim_reg_stats(struct stat_sdb_t *sdb)
                    "instruction per branch",
                    "sim_num_insn / sim_num_branches", /* format */NULL);
 
-  stat_reg_counter(sdb, "loadValueLocality",
-                  "load value locality for all LD instructions executed",
-                  &locality, 0, NULL);
-
-  stat_reg_double(sdb, "loadValueLocalityPerc",
-                    "load value locality / number of loads",
-                 &localityPercentage, 0, NULL);
-
-  stat_reg_float(sdb, "speedUp",
-                    "(T2 / T1 - 1) * 100 [%]",
-                  &S, 1, NULL);
-
-  stat_reg_double(sdb, "predictableLoad", "Percentage of predictable load instructions [%]",
-                  &predictablePerc, 0, NULL);
-
-  stat_reg_double(sdb, "unpredictableLoad", "Percentage of unpredictable load instructions [%]",
-                  &unpredictablePerc, 0, NULL);
-
-  // ADDED //////////////
-
-  if(predict){
-
-   stat_reg_counter(sdb, "valuePrediction",
-		   "total number of correctly predicted values",
-		   &value_prediction, value_prediction, NULL);
-  stat_reg_counter(sdb, "classifiedPred",
-		   "number of loads classified as predictable",
-		   &classified_pred, classified_pred, NULL);
-  stat_reg_counter(sdb, "classifiedUnpred",
-		   "number of loads classified as unpredictable",
-		   &classified_unpred, classified_unpred, NULL);
-  stat_reg_counter(sdb, "predictable",
-		   "correctly classified predictable loads",
-		   &predictable, predictable, NULL);
-  stat_reg_counter(sdb, "unpredictable",
-		   "correctly classified unpredictable loads",
-		   &unpredictable, unpredictable, NULL);
-
-  stat_reg_double(sdb, "lvptPredictionAccuracy",
-      "Prediction accuracy for LVPT",
-      &lvpt_prediction_acc, 0, NULL);
-
-  }
-
-
-  stat_reg_counter(sdb, "sim_num_refs",
-		   "total number of loads and stores executed",
-		   &sim_num_refs, 0, NULL);
-  stat_reg_counter(sdb, "sim_num_loads",
-		   "total number of loads executed",
-		   &load_accesses, 0, NULL);
-  stat_reg_counter(sdb, "T1",
-                   "T1",&T1, /* initial value */0, /* format */NULL);
-  stat_reg_counter(sdb, "T2",
-                   "T2",&T2, /* initial value */0, /* format */NULL);  
-
-
-  ////////////////////
-
   /* register predictor stats */
   if (pred)
     bpred_reg_stats(pred, sdb);
-}
 
+  stat_reg_counter(sdb,"sim_indir_refs",
+		   "total number of indir executed -JIndir dynamics",
+		   &sim_indir_refs, 0, NULL);
+  stat_reg_counter(sdb,"sim_num_jumps",
+		   "total number of jumps executed",
+		   &sim_num_jumps, 0, NULL);
+  stat_reg_counter(sdb,"sim_num_statice_indir",
+		   "total number of static indir jumps executed",
+		   &nr_salturi_statice_indir, 0, NULL);
+  stat_reg_counter(sdb,"sim_num_statice",
+		   "total number of static jumps executed",
+		   &nr_salturi_statice, 0, NULL);
+  
+  /* register predictor stats */
+  //PPM
+  if(contextual == 1)
+	vpred_ppm_stats(sdb);
+  //Target Cache
+  if(contextual == 0)
+	vpred_tc_stats(sdb);
+}
 /* initialize the simulator */
 void
 sim_init(void)
 {
   sim_num_refs = 0;
-
-  value_predictor_type type = contextual == 0 ? STRIDE: CONTEXTUAL;
-
-  // use flags!!!
-
-  if(is_assoc){ // fully associative, ways = lvpt size, number of sets = 1
-
-    lvp_associatvity = lvpt_size;
-    lvp_sets = 1;
-
-  }
-  else{ // direct mapped, ways = 1, numbers of sets = lvpt size
-
-    lvp_associatvity = 1;
-    lvp_sets = lvpt_size;
-
-  }
-
-  // initialize lvpred
-  init_lvp(&lvp, lvp_sets, lvp_associatvity, history_length, LRU, type); // using lru for now...
-  
-  store_accesses = 0;
-  load_accesses = 0;
-
+   sim_num_loads = 0;
+sim_indir_refs = 0;	
   /* allocate and initialize register file */
   regs_init(&regs);
 
@@ -701,7 +488,20 @@ sim_uninit(void)
 #define SET_GPR(N,EXPR)		(regs.regs_R[N] = (EXPR))
 
 #if defined(TARGET_PISA)
+#define DGPR(N)			(N)
+#define DGPR_D(N)		((N) &~1)
 
+/* floating point register dependence decoders */
+#define DFPR_L(N)		(((N)+32)&~1)
+#define DFPR_F(N)		(((N)+32)&~1)
+#define DFPR_D(N)		(((N)+32)&~1)
+
+/* miscellaneous register dependence decoders */
+#define DNA			(0)
+#define DHI			(0+32+32)
+#define DLO			(1+32+32)
+#define DFCC			(2+32+32)
+#define DTMP			(3+32+32)
 /* floating point registers, L->word, F->single-prec, D->double-prec */
 #define FPR_L(N)		(regs.regs_F.l[(N)])
 #define SET_FPR_L(N,EXPR)	(regs.regs_F.l[(N)] = (EXPR))
@@ -717,27 +517,6 @@ sim_uninit(void)
 #define LO			(regs.regs_C.lo)
 #define FCC			(regs.regs_C.fcc)
 #define SET_FCC(EXPR)		(regs.regs_C.fcc = (EXPR))
-
-
-//// ADDED ////////////
-
-/* general register dependence decoders */
-#define DGPR(N)			(N)
-#define DGPR_D(N)		((N) &~1)
-
-/* floating point register dependence decoders */
-#define DFPR_L(N)		(((N)+32)&~1)
-#define DFPR_F(N)		(((N)+32)&~1)
-#define DFPR_D(N)		(((N)+32)&~1)
-
-/* miscellaneous register dependence decoders */
-#define DNA			(0)
-#define DHI			(0+32+32)
-#define DLO			(1+32+32)
-#define DFCC			(2+32+32)
-#define DTMP			(3+32+32)
-
-////////// END  //////////////////////
 
 #elif defined(TARGET_ALPHA)
 
@@ -787,17 +566,64 @@ sim_uninit(void)
 void
 sim_main(void)
 {
-
-  int out1;
-
+int out1, out2;
+  int in1, in2, in3;
   md_inst_t inst;
   register md_addr_t addr, target_PC;
   enum md_opcode op;
   register int is_write;
   int stack_idx;
   enum md_fault_type fault;
+  int biticache = 0;
+  int masca_nesem=1;
+  md_addr_t masca_sem=1;
+  int nTemp = 1;
+  int tz;
+
+  INDIRValueLocality = 0;
+  INDIRValueLocality = 0;
+  nr_salturi_statice_indir = 0;
+  nr_salturi_statice = 0;
+  INDIRValueLocality = 0;
+  nr_salturi_statice_indir = 0;
+  nr_salturi_statice = 0;
+  loadValueLocality = 0;
+  valuePrediction = 0;
+  classifiedPred = 0;
+  classifiedUnpred = 0;
+  predictable = 0;
+  wpredicted = 0;
 
   fprintf(stderr, "sim: ** starting functional simulation w/ predictors **\n");
+ l = NULL;
+  l_INDIR = news();
+  l_CTRL = news();
+  jvpt = NULL;
+  ivpt=NULL;
+  if(contextual == 0)
+  {
+	 //biti cache
+	  while(nTemp != dimcache)
+	  {
+   		nTemp *= 2;
+		biticache++;
+	  }
+	  for(tz=0;tz<biticache;tz++)
+		  masca_nesem *= 2;
+	  for(tz=0;tz<32;tz++)
+		  masca_sem *= 2;
+
+	  masca_sem -= masca_nesem;
+	  masca_nesem--;
+
+	  fprintf(stderr, "biti cache %d masca %d  mascasem %d",biticache,masca_nesem,masca_sem);
+
+	  ivpt = IVPTinit(ivpt,dimcache);
+  }
+  if(!isAssoc)
+	  jvpt=JVPTinit(jvpt, JVPTdim);
+  if(predict == 1 && !contextual)	/* if it's an incremental prediction */
+	  history = 1;
 
   /* set up initial default next PC */
   regs.regs_NPC = regs.regs_PC + sizeof(md_inst_t);
@@ -833,11 +659,15 @@ sim_main(void)
       /* execute the instruction */
       switch (op)
 	{
-#define DEFINST(OP,MSK,NAME,OPFORM,RES,FLAGS,O1,O2,I1,I2,I3)		\
-	case OP:		\
-          out1=O1;        \
-          SYMCAT(OP,_IMPL);						\
-          break;
+#define DEFINST(OP,MSK,NAME,OPFORM,RES,FLAGS,O1,O2,I1,I2,I3)	\
+	case OP:						\
+          out1=O1;						\
+          out2=O2;						\
+          in1=I1;						\
+          in2=I2;						\
+          in3=I3;						\
+	  SYMCAT(OP,_IMPL);					\
+	       break;
 #define DEFLINK(OP,MSK,NAME,MASK,SHIFT)					\
         case OP:							\
           panic("attempted to execute a linking opcode");
@@ -851,46 +681,65 @@ sim_main(void)
 
       if (fault != md_fault_none)
 	fatal("fault (%d) detected @ 0x%08p", fault, regs.regs_PC);
+      if((MD_OP_FLAGS(op)& F_INDIRJMP)&& !MD_IS_RETURN(op))
+	{
+		sim_indir_refs++; 
+		if(predict == 1)	/* JIndir value prediction */
+		{
+			if(contextual == 1)  /*predictor contextual*/
+			{
+				if(isAssoc)
+				{
+					if(!foundAssociativeJVPTAddress(regs.regs_PC, regs.regs_R[in1], history, &jvpt, JVPTdim, contextual, pattern))
+						{
+							jvpt = pushJVPTAddress(jvpt, regs.regs_PC);
+							insertJVPTValue(jvpt, regs.regs_R[in1], history, contextual);
+						}
+				}
+				else
+					insertIntoDirrectMappedJVPT(regs.regs_PC, regs.regs_R[in1], history, &jvpt, contextual, JVPTdim, pattern);
+			}
+			if(contextual == 0)   /*target cache*/
+				insertIntoDirrectMappedTargetCache(regs.regs_R[in1],(regs.regs_PC & masca_sem) >> biticache ,regs.regs_PC & masca_nesem,dimcache,nposcache);
+		}
+		else	/* JIndir value locality verification */
+		{
 
+			if(l_INDIR == NULL)
+			{
+				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1]);
+				nr_salturi_statice_indir++;
+				fprintf(stderr, "\n PC: %x op: %d %-10s in1: %d in2: %d out1: %d\n",regs.regs_PC,op,MD_OP_NAME(op),in1,in2,out1);
+			}
+			else if(!foundAddress_INDIR(l_INDIR, regs.regs_PC, regs.regs_R[in1], history))
+			{
+				l_INDIR = pushAddress(l_INDIR, regs.regs_PC, regs.regs_R[in1]);
+				nr_salturi_statice_indir++;
+		        fprintf(stderr, "\n PC: %x op: %d %-10s in1: %d in2: %d out1: %d\n",regs.regs_PC,op,MD_OP_NAME(op),in1,in2,out1);		
+			}	
+		}
+	}
+
+    if (MD_OP_FLAGS(op) & F_CTRL)
+	{
+
+	  sim_num_jumps++;
+	  if(l_CTRL == NULL)
+	  {
+		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1]);
+		nr_salturi_statice++;
+	  }
+	  else if(!foundAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1],history, predict))
+	  {
+		l_CTRL= pushAddress(l_CTRL, regs.regs_PC, regs.regs_R[in1]);
+		nr_salturi_statice++;
+	  } 
+    }
       if (MD_OP_FLAGS(op) & F_MEM)
 	{
 	  sim_num_refs++;
-	  
-	  
-	  if (MD_OP_FLAGS(op) & F_STORE) {
-    		is_write = TRUE;
-	    	store_accesses = store_accesses + 1;
-	    }
-	  if(MD_OP_FLAGS(op) & F_LOAD) {
-
-	       load_accesses = load_accesses + 1;
-
-         word_t value = MEM_READ_WORD(mem, addr);
-
-         md_addr_t indexer = mem_address == 0 ? regs.regs_PC: addr;
-
-         if(predict == 0) { // load value locality
-
-            update_lvp(&lvp, indexer, value);
-
-         }
-
-         else { // prediction
-
-
-
-            // predict first
-            word_t predicted = predict_value(&lvp, indexer, pattern);
-
-            update_prediction_confidence(&lvp, indexer, value, predicted);
-
-            update_lvp(&lvp, indexer, value); // still need to update
-
-         }
-
-    }
-	       
-	   
+	  if (MD_OP_FLAGS(op) & F_STORE)
+	    is_write = TRUE;
 	}
 
       if (MD_OP_FLAGS(op) & F_CTRL)
@@ -943,116 +792,12 @@ sim_main(void)
       regs.regs_NPC += sizeof(md_inst_t);
 
       /* finish early? */
-      if (max_insts && sim_num_insn >= max_insts) {
+      if (max_insts && sim_num_insn >= max_insts)
+      {
+	aritate_Address(l_INDIR);
+	return;
+      }
 
-          locality = lvp.locality_hits;
-          localityPercentage = load_value_locality(&lvp);
-
-          if(predict){
-
-            compute_predict_stats();
-
-            computeSpeedup();
-
-          }
-
-
-          
-	        return;
-	    }
-
+	//return;
     }
-
-    locality = lvp.locality_hits;
-    localityPercentage = load_value_locality(&lvp);
-
-    if(predict){
-
-      compute_predict_stats();
-
-       computeSpeedup();
-
-    }
-          
-
-}
-
-void compute_predict_stats(){
-
-
-      value_prediction = lvp.correct_predictions;
-      classified_pred = lvp.loads_predictable;
-      predictable = lvp.correct_predictable;
-
-      classified_unpred = lvp.loads_unpredictable;
-      unpredictable = lvp.correct_unpredictable;
-
-
-      lvpt_prediction_acc = value_prediction * 1.0 / load_accesses;
-
-      predictablePerc = (value_prediction * 100.0) / classified_pred;
-      unpredictablePerc = (unpredictable * 100.0) / classified_unpred;
-
-
-}
-
-void computeSpeedup(){
-
-
-  printf("Factor Complexitate Arhitectura %d \n",Factor_Complexitate_Arhitectura);
-
-  npenload = load_accesses * Tacces_DRAM; 
-  printf("npenload %d \n", npenload);
-  T1=(sim_num_insn - load_accesses)*1 + npenload;
-  printf("T1 %d \n", T1);
-        
-  if(contextual==0)
-      Tacces_predictor = Factor_Complexitate_Arhitectura*2;
-  else
-  if(contextual==1)
-      Tacces_predictor = Factor_Complexitate_Arhitectura*5;
-  else
-      Tacces_predictor = Factor_Complexitate_Arhitectura*7;
-      
-  printf("Contextual %d \n", contextual);  
-  printf("Tacces_predictor %d \n",  Tacces_predictor);           
-
-
-  npenload=0;
-  notfoundA = load_accesses - (classified_pred + classified_unpred);
-    
-  printf("notfoundA %d \n",  notfoundA);  
-
-  foundA = value_prediction;
-      printf("foundA %d \n",  foundA);  
-    
-foundA_miss = classified_pred - value_prediction + classified_unpred;
-      printf("classifiedPred %d \n",   classified_pred);
-      printf("valuePrediction %d \n",  value_prediction);
-      printf("classifiedUnpred %d \n", classified_unpred);
-      printf("foundAMiss %d \n",  foundA_miss);
-
-
-  if (notfoundA!=0) 
-        npenload = npenload + notfoundA* Tacces_DRAM;
-  
-  if(foundA!=0) 
-        npenload=npenload + foundA * Tacces_predictor;
-
-  if(foundA_miss!=0) 
-        npenload=npenload+foundA_miss * Tacces_DRAM;
-
-    printf("npenload %d \n",  npenload);
-
-
-
-  T2=(sim_num_insn - load_accesses)*1 + npenload;
-
-  printf("sim_num_insn  %d \n",  sim_num_insn );
-  printf("sim_num_loads %d \n",  load_accesses);
-  printf("T2 %d \n",  T2);
-
-  S=1.00*(T1-T2)/T2*100;
-  printf("S %f \n",  S);
-
 }

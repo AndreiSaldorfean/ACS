@@ -100,13 +100,12 @@
  *
  */
 
-#ifndef SPRED_H
-#define SPRED_H
+#ifndef SBPRED_H
+#define SBPRED_H
 
 #define dassert(a) assert(a)
 
 #include <stdio.h>
-
 
 #include "host.h"
 #include "misc.h"
@@ -148,7 +147,121 @@
  *	BPredNotTaken:  static predict branch not taken
  *
  */
+typedef struct element *valueList;
+struct element
+{
+  sword_t value;
+  int freq;
+  valueList nextValue;
+};
 
+typedef struct location *addrList;
+struct location
+{
+  md_addr_t addr;
+  addrList nextAddress;
+  valueList values;
+};
+
+//PPM
+typedef struct JVPTelement *JVPTvalueList;
+struct JVPTelement
+{
+  sword_t value;
+  JVPTvalueList nextValue;
+  int count;	// it's used only by the contextual predictor
+};
+
+typedef struct JVPTlocation *JVPTaddrList;
+struct JVPTlocation
+{
+  md_addr_t addr;
+  JVPTaddrList nextAddress;
+  JVPTvalueList values;
+  int automat;
+  sword_t stride[2];  // it's used only by the stride predictor
+};
+
+//TC
+typedef struct IVPTelement *IVPTValueList;
+struct IVPTelement
+{
+	md_addr_t addr;
+	md_addr_t tag;
+	IVPTValueList nextPos;
+};
+
+typedef struct IVPTlocation *IVPTCache;
+struct IVPTlocation
+{
+	IVPTCache nextPos;
+	IVPTValueList valueList;
+};
+
+/* JIndir's (load) value locality functions */
+addrList news();
+int foundValue_INDIR(addrList l, sword_t value, int history);
+int foundAddress_INDIR(addrList l, md_addr_t addr, sword_t value, int history);
+
+addrList pushAddress(addrList p, md_addr_t addr, sword_t value);
+void pushValue(addrList p, sword_t value);
+int foundValue(addrList l, sword_t value, int history, int distinct);
+int foundAddress(addrList l, md_addr_t addr, sword_t value, int history, int distinct);
+
+/* load value prediction functions */
+JVPTaddrList pushJVPTAddress(JVPTaddrList p, md_addr_t addr);
+void insertJVPTValue(JVPTaddrList ad, sword_t value, int history, int contextual);
+sword_t maxValue(JVPTvalueList p);
+sword_t predictValue(JVPTaddrList p, int history, int contextual, int pattern);
+void freeValueList(JVPTvalueList *values);
+int foundAssociativeJVPTAddress(md_addr_t addr, sword_t value, int history, JVPTaddrList *jvpt, int JVPTdim, int contextual, int pattern);
+JVPTaddrList JVPTinit(JVPTaddrList l, int JVPTdim);
+void insertIntoDirrectMappedJVPT(md_addr_t addr, sword_t value, int history, JVPTaddrList *jvpt, int contextual, int JVPTdim, int pattern);
+
+/* declaration of target cache list */
+extern IVPTCache ivpt;
+/*target cache prediction functions*/
+IVPTCache pushIVPTCacheLocation(IVPTCache p);
+void insertIVPTValue(IVPTCache ad, md_addr_t addr,md_addr_t tag, int nposcache);
+sword_t TCPredictValue(IVPTCache p,md_addr_t tag ,int nposcache);
+IVPTCache IVPTinit(IVPTCache l, int dimcache);
+void insertIntoDirrectMappedTargetCache(md_addr_t addr, md_addr_t tag, int index , int dimcache , int nposcache);
+
+
+static counter_t INDIRValueLocality;
+static counter_t nr_salturi_statice_indir;
+static counter_t nr_salturi_statice;
+/* counter for JIndir value locality */
+static counter_t INDIRValueLocality;
+/* counter for JIndir statice */
+static counter_t nr_salturi_statice_indir;
+/* counter for jumps statice */
+static counter_t nr_salturi_statice;
+
+/* counter for load value locality */
+static counter_t loadValueLocality = 0;
+
+/* Total number of correctly predicted JIndir's */
+static counter_t valuePrediction = 0;
+
+/* Total number of JIndir's classified as predictable */
+static counter_t classifiedPred = 0;
+
+/* Total number of JIndir's classified as unpredictable */
+static counter_t classifiedUnpred = 0;
+
+/* Total number of correctly classified predictable JIndir's */
+static counter_t predictable = 0;
+
+/* Total number of wrong predicted JIndir's */
+static counter_t wpredicted = 0;
+
+/* PPM value predictor stats */
+void
+vpred_ppm_stats(struct stat_sdb_t *sdb);/* stats database */
+/* TC value predictor stats */
+void
+vpred_tc_stats(struct stat_sdb_t *sdb);
 /* branch predictor types */
 enum bpred_class {
   BPredComb,                    /* combined predictor (McFarling) */
@@ -325,119 +438,6 @@ bpred_update(struct bpred_t *pred,	/* branch predictor instance */
 	     struct bpred_update_t *dir_update_ptr); /* pred state pointer */
 
 
-// last value prediction
-
-
-typedef enum {FIFO, LRU, RANDOM}
-replacement_policy;
-
-// added ///////////////
-
-typedef enum {CONTEXTUAL, STRIDE}
-value_predictor_type;
-
-/////////////////
-
-
-typedef struct {
-
-    word_t tag;
-
-    word_t *history;
-
-    u_int8_t hist_pos; // ring structure
-
-    u_int8_t hist_count;
-
-    ////////////// NEW ////////////////
-    u_int8_t size;
-
-    ////////////////////////////
-
-    bool_t valid;
-
-    int last_used; // for LRU
-
-
-    // incremental
-    // for example, if we have 20, 30, 40 for LD, then stride is 40-30=10 and previous_stride=30-20=10
-    // since they are equal, we can predict that the next LD will be last LD value plus the stride (30+10=40)
-    int stride; 
-    int previous_stride;
-
-
-    u_int8_t confidence; // 00 - strongly unpredictable,  01 - weakly, 10 - weakly predictable, 11 - strongly predictable
-
-} lvp_entry;
-
-typedef struct {
-
-    lvp_entry** sets; // [num_sets x num_ways]
-    u_int16_t num_sets;
-    u_int16_t num_ways;
-
-    u_int8_t history_len;
-
-    u_int16_t* next_way; // for FIFO
-
-    replacement_policy policy;
-
-    ////////////// NEW //////////////////
-
-    value_predictor_type predictor_type;
-
-
-    ////////////////////////////
-
-    // stats
-
-    // LOCALITY
-    word_t locality_hits; // locality counter
-
-    // PREDICTION
-
-    // number of loads correctly classified as predictable
-    counter_t correct_predictable;
-
-    // number of loads classified as predictable
-    counter_t loads_predictable;
-
-    // number of loads correctly classified as unpredictable
-    counter_t correct_unpredictable;
-
-    // number of loads classified as unpredictable
-    counter_t loads_unpredictable;
-
-
-    // number of correctly predicted load values
-    counter_t correct_predictions;
-
-
-    // all purpose
-    word_t total_loads; // how many loads
-
-} lvp_table;
-
-
-word_t get_history(lvp_entry* entry, int logical_index);
-
-word_t predict_value(lvp_table *lvp, word_t indexer, u_int32_t pattern);
-
-bool_t init_lvp(lvp_table *lvp, u_int16_t num_sets, u_int16_t num_ways, u_int8_t history_len, replacement_policy policy, value_predictor_type type);
-
-u_int16_t _select_way_to_replace(lvp_table *lvp, u_int16_t set);
-
-u_int16_t select_way_to_insert(lvp_table* lvp, u_int16_t set);
-
-double load_value_locality(lvp_table *lvp);
-
-void update_lvp(lvp_table *lvp, word_t indexer, word_t value);
-
-void destroy_lvp(lvp_table* lvp);
-
-void update_prediction_confidence(lvp_table* lvp, word_t indexer, word_t value, word_t predicted);
-
-
 #ifdef foo0
 /* OBSOLETE */
 /* dump branch predictor state (for debug) */
@@ -446,5 +446,4 @@ bpred_dump(struct bpred_t *pred,	/* branch predictor instance */
 	   FILE *stream);		/* output stream */
 #endif
 
-#endif /*SPRED_H */
-
+#endif /* BPRED_H */
