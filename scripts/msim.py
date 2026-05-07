@@ -7,8 +7,7 @@ msim_dir = os.path.join(script_path, "..", "m-sim_v2.0")
 results_dir = os.path.join(msim_dir, "results")
 out_dir = os.path.join(script_path, "build")
 inputs_dir = os.path.join(script_path, "..", "inputs")
-# benchmarks = ["applu", "equake", "galgel", "lucas", "mesa", "mgrid"]
-benchmarks = ["applu"]
+benchmarks = ["applu", "equake", "galgel", "lucas", "mesa", "mgrid"]
 
 
 def run_single_group(lvptSize):
@@ -22,7 +21,7 @@ def run_single_group(lvptSize):
 
 if __name__ == "__main__":
 
-    lvpt_sizes = [16,32,64,128,256,512,1024,2048]
+    lvpt_sizes = [16, 32, 64, 128, 256, 512, 1024, 2048]
     os.makedirs(out_dir, exist_ok=True)
     os.chdir(msim_dir)
     with multiprocessing.Pool(2) as pool:
