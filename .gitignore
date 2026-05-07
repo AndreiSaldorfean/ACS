@@ -10,3 +10,4 @@
 m-sim_v2.0/*/*.a
 m-sim_v2.0/sim-outorder
 m-sim_v2.0/sysprobe
+m-sim_v2.0/results/*.out
