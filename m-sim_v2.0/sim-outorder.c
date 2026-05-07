@@ -2942,7 +2942,7 @@ commit(int context_id)
 	  if((last_commit_cycle + COMMIT_TIMEOUT) <= sim_cycle){
 	    fprintf(stderr, "NOT COMLPETED: \n");
 	    md_print_insn(rs->IR, rs->PC, stderr);
-	    fprintf(stderr, "\n %d %d\n", rs->dispatched, find_iq_entry(2));
+	    fprintf(stderr, "\n %d %d\n", rs->dispatched, find_iq_entry());
 	  }
 	  break;
 	}
