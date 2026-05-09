@@ -250,3 +250,7 @@ typedef struct {
    double precharge_delay;
    
 } result_type;
+
+int input_data(int argc, char *argv[],parameter_type *parameters);
+void calculate_time(result_type * result,parameter_type *parameters);
+void output_data(result_type *result,parameter_type *parameters);
