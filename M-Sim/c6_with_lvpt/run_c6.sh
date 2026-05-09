@@ -33,11 +33,11 @@ run_sim() {
     rm -rf "$workdir"
 }
 
-run_sim gcc     "$BASEDIR/gcc.arg" &
-run_sim bzip2   "$BASEDIR/bzip2.arg" &
-run_sim gzip    "$BASEDIR/gzip.arg" &
-run_sim applu   "$BASEDIR/applu.arg" &
-run_sim mesa    "$BASEDIR/mesa.arg" &
-run_sim equake  "$BASEDIR/equake.arg" &
+run_sim applu   "$BASEDIR/results/applu.arg"  &
+run_sim equake  "$BASEDIR/results/equake.arg" &
+run_sim galgel  "$BASEDIR/results/galgel.arg" &
+run_sim lucas   "$BASEDIR/results/lucas.arg"  &
+run_sim mesa    "$BASEDIR/results/mesa.arg"   &
+run_sim mgrid   "$BASEDIR/results/mgrid.arg"  &
 
 wait
