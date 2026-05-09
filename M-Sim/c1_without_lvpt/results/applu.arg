@@ -1,1 +1,1 @@
-4000000000 # ../spec2000binaries/applu/applu00.peak.ev6 < ../spec2000binaries/applu/applu.in > ./results/applu.out
+4000000000 # ../inputs/ev6_files/applu00.peak.ev6 < ../inputs/in_files/applu.in > ./results/applu.out

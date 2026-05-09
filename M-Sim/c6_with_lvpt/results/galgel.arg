@@ -1,1 +1,1 @@
-4000000000 # ../spec2000binaries/galgel/galgel00.peak.ev6 < ../spec2000binaries/galgel/galgel.in > ./results/galgel.out
+4000000000 # ../inputs/ev6_files/galgel00.peak.ev6 < ../inputs/in_files/galgel.in > ./results/galgel.out
