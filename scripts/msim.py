@@ -7,22 +7,19 @@ msim_dir = os.path.join(script_path, "..", "m-sim_v2.0")
 results_dir = os.path.join(msim_dir, "results")
 out_dir = os.path.join(script_path, "build")
 inputs_dir = os.path.join(script_path, "..", "inputs")
-#benchmarks = ["applu", "equake", "galgel", "lucas", "mesa", "mgrid"]
+# benchmarks = ["applu", "equake", "galgel", "lucas", "mesa", "mgrid"]
 benchmarks = ["applu", "equake", "lucas", "mesa", "mgrid"]
-# pairs = [
-#     [benchmarks[0], benchmarks[1]],
-#     [benchmarks[2], benchmarks[3]],
-#     [benchmarks[4], benchmarks[5]],
-# ]
 
 pairs = [
-     [benchmarks[0], benchmarks[1]],
-     [benchmarks[2], benchmarks[3]]
+    [benchmarks[0], benchmarks[1]],
+    [benchmarks[2], benchmarks[3]],
+    [benchmarks[0], benchmarks[2]],
 ]
-# triplets = [
-#     [benchmarks[0], benchmarks[1], benchmarks[2]],
-#     [benchmarks[3], benchmarks[4], benchmarks[5]],
-# ]
+triplets = [
+    [benchmarks[0], benchmarks[1], benchmarks[2]],
+    [benchmarks[2], benchmarks[3], benchmarks[4]],
+]
+
 
 def run_single_group(lvptSize):
 
@@ -40,7 +37,7 @@ def run_2_group(lvptSize):
         arg_file_name1 = f"{group[1]}_{lvptSize}.arg"
         arg_file0 = os.path.join(inputs_dir, "args", group[0], arg_file_name0)
         arg_file1 = os.path.join(inputs_dir, "args", group[1], arg_file_name1)
-        cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{group[0]}_{group[1]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1}"
+        cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{group[0]}-{group[1]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1}"
 
         subprocess.run(cmd, shell=True)
 
@@ -56,20 +53,31 @@ def run_3_group(lvptSize):
         arg_file1 = os.path.join(inputs_dir, "args", group[1], arg_file_name1)
         arg_file2 = os.path.join(inputs_dir, "args", group[2], arg_file_name2)
 
-        cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{group[0]}_{group[1]}_{group[2]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1} {arg_file2}"
+        cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{group[0]}-{group[1]}-{group[2]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1} {arg_file2}"
 
         subprocess.run(cmd, shell=True)
 
 
 def run_all_group(lvptSize):
-    arg_file0 = os.path.join(inputs_dir,"args",benchmarks[0],f"{benchmarks[0]}_{lvptSize}.arg")
-    arg_file1 = os.path.join(inputs_dir,"args",benchmarks[1],f"{benchmarks[1]}_{lvptSize}.arg")
-    arg_file2 = os.path.join(inputs_dir,"args",benchmarks[2],f"{benchmarks[2]}_{lvptSize}.arg")
-    arg_file3 = os.path.join(inputs_dir,"args",benchmarks[3],f"{benchmarks[3]}_{lvptSize}.arg")
-    arg_file4 = os.path.join(inputs_dir,"args",benchmarks[4],f"{benchmarks[4]}_{lvptSize}.arg")
+    arg_file0 = os.path.join(
+        inputs_dir, "args", benchmarks[0], f"{benchmarks[0]}_{lvptSize}.arg"
+    )
+    arg_file1 = os.path.join(
+        inputs_dir, "args", benchmarks[1], f"{benchmarks[1]}_{lvptSize}.arg"
+    )
+    arg_file2 = os.path.join(
+        inputs_dir, "args", benchmarks[2], f"{benchmarks[2]}_{lvptSize}.arg"
+    )
+    arg_file3 = os.path.join(
+        inputs_dir, "args", benchmarks[3], f"{benchmarks[3]}_{lvptSize}.arg"
+    )
+    arg_file4 = os.path.join(
+        inputs_dir, "args", benchmarks[4], f"{benchmarks[4]}_{lvptSize}.arg"
+    )
 
-    cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{benchmarks[0]}_{benchmarks[1]}_{benchmarks[2]}_{benchmarks[3]}_{benchmarks[4]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1} {arg_file2} {arg_file3} {arg_file4}"
+    cmd = f"{msim_dir}/sim-outorder -redir:sim {out_dir}/{benchmarks[0]}-{benchmarks[1]}-{benchmarks[2]}-{benchmarks[3]}-{benchmarks[4]}_{lvptSize}.res -fastfwd 1000000 -max:inst 10000000 -lvpt:size {lvptSize} {arg_file0} {arg_file1} {arg_file2} {arg_file3} {arg_file4}"
     subprocess.run(cmd, shell=True)
+
 
 if __name__ == "__main__":
 
@@ -78,10 +86,10 @@ if __name__ == "__main__":
     os.chdir(msim_dir)
 
     with multiprocessing.Pool(os.cpu_count()) as pool:
-         pool.map(run_single_group, lvpt_sizes)
+        pool.map(run_single_group, lvpt_sizes)
 
     with multiprocessing.Pool(os.cpu_count()) as pool:
-       pool.map(run_2_group, lvpt_sizes)
+        pool.map(run_2_group, lvpt_sizes)
     with multiprocessing.Pool(os.cpu_count()) as pool:
         pool.map(run_3_group, lvpt_sizes)
 
